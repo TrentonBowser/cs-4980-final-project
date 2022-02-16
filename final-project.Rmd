@@ -1,0 +1,95 @@
+---
+title: "Chicago Crime Prediction"
+output:
+  html_document:
+    df_print: paged
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*.
+
+Also *Ctrl+Enter* runs just the line you are on.
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(lubridate)
+```
+
+
+## Data Loading
+
+```{r}
+crime_data <- read_csv(
+  "data/chicago-crime-dataset.csv",
+  col_names = TRUE,
+  locale = locale("en", tz="US/Central"),
+  na = c("", "NA"),
+  skip_empty_rows = TRUE,
+  show_col_types = FALSE,
+)
+
+weather_data <- read_csv(
+  "data/noaa-chicago-weather.csv",
+  col_names = TRUE,
+  locale = locale("en", tz="US/Central"),
+  na = c("", "NA"),
+  skip_empty_rows = TRUE,
+  show_col_types = FALSE,
+)
+```
+
+
+## Data Cleaning
+
+```{r}
+cleaned_weather_data <- select(weather_data, -c(STATION, NAME, LATITUDE, LONGITUDE, ELEVATION))
+cleaned_weather_data$DATE <- mdy(cleaned_weather_data$DATE)
+cleaned_weather_data <- rename(cleaned_weather_data, Date = DATE)
+```
+
+```{r}
+cleaned_crime_data <- select(crime_data, -c(ID,'Case Number' , Block, 'X Coordinate', 'Y Coordinate', Year, 'Updated On', Location))
+cleaned_crime_data$DateTime <- mdy_hms(cleaned_crime_data$Date)
+cleaned_crime_data$Date <- date(cleaned_crime_data$DateTime)
+```
+
+
+## Combining Data
+```{r}
+combined_data <- cleaned_crime_data %>% left_join(cleaned_weather_data, by="Date")
+combined_data <- select(combined_data, -Date)
+
+# Cleaning up previous data sets in environment
+rm(crime_data)
+rm(weather_data)
+rm(cleaned_weather_data)
+rm(cleaned_crime_data)
+```
+
+
+
+```{r}
+head(combined_data)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
