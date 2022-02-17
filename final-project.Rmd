@@ -119,23 +119,35 @@ In this section, we pre-process the data before testing and modelling on it. Thi
 
 ### Data Cleaning
 ```{r}
+cleaned_crime_data <- select(crime_data, -c(ID,'Case Number' , Block, 'X Coordinate', 'Y Coordinate', Year, 'Updated On', Location))
+cleaned_crime_data$DateTime <- mdy_hms(cleaned_crime_data$Date)
+cleaned_crime_data$Date <- date(cleaned_crime_data$DateTime)
+cleaned_crime_data <- cleaned_crime_data %>%
+  drop_na() %>%
+  filter(Date > "2018-01-01")
+```
+
+```{r}
 cleaned_weather_data <- select(weather_data, -c(STATION, NAME, LATITUDE, LONGITUDE, ELEVATION))
 cleaned_weather_data$DATE <- mdy(cleaned_weather_data$DATE)
 cleaned_weather_data <- rename(cleaned_weather_data, Date = DATE)
 ```
 
 ```{r}
-cleaned_crime_data <- select(crime_data, -c(ID,'Case Number' , Block, 'X Coordinate', 'Y Coordinate', Year, 'Updated On', Location))
-cleaned_crime_data$DateTime <- mdy_hms(cleaned_crime_data$Date)
-cleaned_crime_data$Date <- date(cleaned_crime_data$DateTime)
+cleaned_park_data <- select(park_data, -c(OBJECTID, the_geom, GISOBJID))
+cleaned_park_data <- rename(cleaned_park_data, Longitude = X_COORD, Latitude = Y_COORD)
 ```
 
 ```{r}
-cleaned_parks_data <- select(parks_data, -c(OBJECTID, the_geom, GISOBJID))
-cleaned_parks_data <- rename(cleaned_parks_data, Longitude = X_COORD, Latitude = Y_COORD)
+cleaned_library_data <- select(library_data, -c("HOURS OF OPERATION", ADDRESS, CITY, STATE, ZIP, PHONE, WEBSITE))
+cleaned_library_data$LOCATION <- str_remove_all(cleaned_library_data$LOCATION, "[ \\(\\)]")
+cleaned_library_data <- cleaned_library_data %>% separate(LOCATION, c("Latitude", "Longitude"), ",")
 ```
 
-
+```{r}
+cleaned_art_data <- select(art_data, -c("X COORDINATE", "Y COORDINATE", LOCATION, OWNER))
+cleaned_art_data <- rename(cleaned_art_data, Longitude = LONGITUDE, Latitude = LATITUDE)
+```
 
 ### Combining Data
 
@@ -146,16 +158,16 @@ combined_data <- select(combined_data, -Date)
 # Cleaning up previous data sets in environment
 rm(crime_data)
 rm(weather_data)
-rm(cleaned_weather_data)
-rm(cleaned_crime_data)
-rm(parks_data)
+rm(park_data)
+rm(library_data)
+rm(art_data)
 ```
 
 
 
-## Adding Nearest Park To Crime
+#### Adding Nearest Park To Crime
 ```{r}
-park_locations <-cleaned_parks_data %>%
+park_locations <-cleaned_park_data %>%
   group_by(PARK_NO) %>%
   summarize_at(vars(Longitude:Latitude), mean)
 
@@ -187,7 +199,6 @@ closest_parks <- apply(combined_data, MARGIN=1, FUN=get_closest_park_function)
 
 #combined_data %>% slice(2)
 ```
-
 
 
 
