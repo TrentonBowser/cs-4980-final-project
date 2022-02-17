@@ -13,7 +13,11 @@ library(tidyverse)
 library(lubridate)
 ```
 
-## Dataset Importing
+## Hypotheses
+
+
+
+## Datasets
 We have decided to use multiple different datasets for this project, allowing us to pull broader and more impactful relations within our data. Each of the datasets we are using will be imported below, with an explanation and information on each.
 
 ### Chicago Crime Dataset
