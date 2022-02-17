@@ -124,7 +124,7 @@ cleaned_crime_data$DateTime <- mdy_hms(cleaned_crime_data$Date)
 cleaned_crime_data$Date <- date(cleaned_crime_data$DateTime)
 cleaned_crime_data <- cleaned_crime_data %>%
   drop_na() %>%
-  filter(Date > "2018-01-01")
+  filter(Date > "2021-01-01")
 ```
 
 ```{r}
@@ -177,9 +177,9 @@ calculate_distance <- function(row, lat1, long1){
   d_lat <- abs(lat1-as.numeric(row["Latitude"])) * pi / 180.0
   d_long <- abs(long1-as.numeric(row["Longitude"])) * pi / 180.0
   
-  temp1 <- (sin(d_lat/2.0) * sin(d_lat/2.0)) +
+  temp1 <- (sin(d_lat/2.0)**2) +
     ((cos(lat1*pi/180.0) * cos(as.numeric(row["Latitude"])*pi/180.0)) *
-    (sin(d_long/2.0) * sin(d_long/2.0)))
+    (sin(d_long/2.0)**2))
   temp2 <- 2 * atan2(sqrt(temp1), sqrt(1.0-temp1))
   return(temp2*radius)
 }
@@ -191,17 +191,48 @@ get_closest_park_function <- function(row){
   
   closest_dist <- park_distances[closest_park_index]
   closest_park <- (park_locations %>% slice(closest_park_index))$PARK_NO
+  
   return(c(closest_park, closest_dist))
 }
 
-closest_parks <- apply(combined_data, MARGIN=1, FUN=get_closest_park_function)
 
+#closest_parks <- apply(combined_data, MARGIN=1, FUN=get_closest_park_function)
+#combined_data <- combined_data %>% add_column(closest_park = closest_parks[1,], park_dist = closest_parks[2,])
 
-#combined_data %>% slice(2)
+test <- combined_data %>% slice(1:1000)
+closest_parks <- apply(test, MARGIN=1, FUN=get_closest_park_function)
+test <- test %>% add_column(closest_park = closest_parks[1,], park_dist = closest_parks[2,])
 ```
 
+#### Adding Nearest Library To Crime
+```{r}
+# Function that finds the closest library and its distance from each crime row
+get_closest_library_function <- function(row){
+  library_distances <- apply(cleaned_library_data, MARGIN=1, FUN=calculate_distance, lat1=as.numeric(row["Latitude"]), long1=as.numeric(row["Longitude"]))
+  closest_library_index <- which.min(library_distances)
+  
+  closest_dist <- library_distances[closest_library_index]
+  closest_library <- (cleaned_library_data %>% slice(closest_library_index))$NAME
+  
+  return(c(closest_library, closest_dist))
+}
+
+#closest_libraries <- apply(combined_data, MARGIN=1, FUN=get_closest_library_function)
+#combined_data <- combined_data %>% add_column(closest_library = closest_libraries[1,], library_dist = closest_libraries[2,])
+
+test <- combined_data %>% slice(1:1000)
+closest_libraries <- apply(test, MARGIN=1, FUN=get_closest_library_function)
+test <- test %>% add_column(closest_library = closest_libraries[1,], library_dist = closest_libraries[2,])
+
+```
 
 
 
 ## Data Analysis and Visualization
 In this section, we look at the different datasets that are being imported, and create basic visualizations to determine what the makeup and distribution of the data is. 
+
+
+
+
+
+
