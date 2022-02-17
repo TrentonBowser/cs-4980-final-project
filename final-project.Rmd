@@ -40,11 +40,19 @@ weather_data <- read_csv(
   skip_empty_rows = TRUE,
   show_col_types = FALSE,
 )
+
+parks_data <- read_csv(
+  "data/chicago-parks-data.csv",
+  col_names = TRUE,
+  locale = locale("en", tz="US/Central"),
+  na = c("", "NA"),
+  skip_empty_rows = TRUE,
+  show_col_types = FALSE,
+)
 ```
 
 
-## Data Cleaning
-
+## Initial Data Cleaning
 ```{r}
 cleaned_weather_data <- select(weather_data, -c(STATION, NAME, LATITUDE, LONGITUDE, ELEVATION))
 cleaned_weather_data$DATE <- mdy(cleaned_weather_data$DATE)
@@ -57,6 +65,12 @@ cleaned_crime_data$DateTime <- mdy_hms(cleaned_crime_data$Date)
 cleaned_crime_data$Date <- date(cleaned_crime_data$DateTime)
 ```
 
+```{r}
+cleaned_parks_data <- select(parks_data, -c(OBJECTID, the_geom, GISOBJID))
+cleaned_parks_data <- rename(cleaned_parks_data, Longitude = X_COORD, Latitude = Y_COORD)
+```
+
+
 
 ## Combining Data
 ```{r}
@@ -68,12 +82,44 @@ rm(crime_data)
 rm(weather_data)
 rm(cleaned_weather_data)
 rm(cleaned_crime_data)
+rm(parks_data)
 ```
 
 
 
+## Adding Nearest Park To Crime
 ```{r}
-head(combined_data)
+park_locations <-cleaned_parks_data %>%
+  group_by(PARK_NO) %>%
+  summarize_at(vars(Longitude:Latitude), mean)
+
+# Function to calculate the distance between two latitude and longitude values (Haversine Formula)
+calculate_distance <- function(row, lat1, long1){
+  radius <- 3958.8
+  d_lat <- abs(lat1-as.numeric(row["Latitude"])) * pi / 180.0
+  d_long <- abs(long1-as.numeric(row["Longitude"])) * pi / 180.0
+  
+  temp1 <- (sin(d_lat/2.0) * sin(d_lat/2.0)) +
+    ((cos(lat1*pi/180.0) * cos(as.numeric(row["Latitude"])*pi/180.0)) *
+    (sin(d_long/2.0) * sin(d_long/2.0)))
+  temp2 <- 2 * atan2(sqrt(temp1), sqrt(1.0-temp1))
+  return(temp2*radius)
+}
+
+# Function that finds the closest park and its distance from each crime row
+get_closest_park_function <- function(row){
+  park_distances <- apply(park_locations, MARGIN=1, FUN=calculate_distance, lat1=as.numeric(row["Latitude"]), long1=as.numeric(row["Longitude"]))
+  closest_park_index <- which.min(park_distances)
+  
+  closest_dist <- park_distances[closest_park_index]
+  closest_park <- (park_locations %>% slice(closest_park_index))$PARK_NO
+  return(c(closest_park, closest_dist))
+}
+
+closest_parks <- apply(combined_data, MARGIN=1, FUN=get_closest_park_function)
+
+
+#combined_data %>% slice(2)
 ```
 
 
