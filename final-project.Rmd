@@ -23,7 +23,7 @@ We have decided to use multiple different datasets for this project, allowing us
 ### Chicago Crime Dataset
 The Chicago Crime dataset contains records of most crimes that the Chicago Police responded to, between the years of 2001 to present, and has been aggregated by the City of Chicago. 
 
-The dataset contains nearly 750,000 entries, with 22 total features. Features include information about the date and location of the crime, as well as information about the type of crime and description of events. During this experiment, we will primarily be using the `Primary Type` feature (listing the type of crime) as a target variable, in order to determine if there are external factors to the types of crimes being predicted.
+The dataset contains nearly 7,500,000 entries, with 22 total features. Features include information about the date and location of the crime, as well as information about the type of crime and description of events. During this experiment, we will primarily be using the `Primary Type` feature (listing the type of crime) as a target variable, in order to determine if there are external factors to the types of crimes being predicted. As a note, we have only selected a more recent subset of the data, to focus on the current state of crime in the city, and to make the data more workable.
 
 This dataset can be sourced from the [City of Chicago website](https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-Present/ijzp-q8t2).
 ```{r message=FALSE}
@@ -125,28 +125,116 @@ cleaned_crime_data$Date <- date(cleaned_crime_data$DateTime)
 cleaned_crime_data <- cleaned_crime_data %>%
   drop_na() %>%
   filter(Date > "2018-01-01")
+
+cleaned_crime_data$IUCR <- as.factor(cleaned_crime_data$IUCR)
+cleaned_crime_data$`Primary Type` <- as.factor(cleaned_crime_data$`Primary Type`)
+cleaned_crime_data$Description <- as.factor(cleaned_crime_data$Description)
+cleaned_crime_data$`Location Description` <- as.factor(cleaned_crime_data$`Location Description`)
+cleaned_crime_data$`FBI Code` <- as.factor(cleaned_crime_data$`FBI Code`)
 ```
 
 ```{r}
 cleaned_weather_data <- select(weather_data, -c(STATION, NAME, LATITUDE, LONGITUDE, ELEVATION))
 cleaned_weather_data$DATE <- mdy(cleaned_weather_data$DATE)
-cleaned_weather_data <- rename(cleaned_weather_data, Date = DATE)
+cleaned_weather_data <- cleaned_weather_data %>%
+  rename(Date=DATE,
+         Fog=WT01,
+         Heavy_Fog=WT02,
+         Thunder=WT03,
+         Ice_Rain=WT04,
+         Hail=WT05,
+         Glaze=WT06,
+         Dust=WT07,
+         Smoke=WT08,
+         Blowing_Snow=WT09,
+         Tornado=WT10,
+         High_Winds=WT11,
+         Mist=WT13,
+         Drizzle=WT14,
+         Freezing_Drizzle=WT15,
+         Rain=WT16,
+         Freezing_Rain=WT17,
+         Snow_Precip=WT18,
+         Unknown_Precip=WT19,
+         Ground_Fog=WT21,
+         Ice_Fog=WT22,
+         Thunder_2=WV03,
+         Rain_Snow_Shower=WV20)
+
+cleaned_weather_data <- cleaned_weather_data %>%
+  mutate(Fog=ifelse(is.na(Fog), 0, Fog),
+         Heavy_Fog=ifelse(is.na(Heavy_Fog), 0, Heavy_Fog),
+         Thunder=ifelse(is.na(Thunder), 0, Thunder),
+         Ice_Rain=ifelse(is.na(Ice_Rain), 0, Ice_Rain),
+         Hail=ifelse(is.na(Hail), 0, Hail),
+         Glaze=ifelse(is.na(Glaze), 0, Glaze),
+         Dust=ifelse(is.na(Dust), 0, Dust),
+         Smoke=ifelse(is.na(Smoke), 0, Smoke),
+         Blowing_Snow=ifelse(is.na(Blowing_Snow), 0, Blowing_Snow),
+         Tornado=ifelse(is.na(Tornado), 0, Tornado),
+         High_Winds=ifelse(is.na(High_Winds), 0, High_Winds),
+         Mist=ifelse(is.na(Mist), 0, Mist),
+         Drizzle=ifelse(is.na(Drizzle), 0, Drizzle),
+         Freezing_Drizzle=ifelse(is.na(Freezing_Drizzle), 0, Freezing_Drizzle),
+         Rain=ifelse(is.na(Rain), 0, Rain),
+         Freezing_Rain=ifelse(is.na(Freezing_Rain), 0, Freezing_Rain),
+         Snow_Precip=ifelse(is.na(Snow_Precip), 0, Snow_Precip),
+         Unknown_Precip=ifelse(is.na(Unknown_Precip), 0, Unknown_Precip),
+         Ground_Fog=ifelse(is.na(Ground_Fog), 0, Ground_Fog),
+         Ice_Fog=ifelse(is.na(Ice_Fog), 0, Ice_Fog),
+         Thunder_2=ifelse(is.na(Thunder_2), 0, Thunder_2),
+         Rain_Snow_Shower=ifelse(is.na(Rain_Snow_Shower), 0, Rain_Snow_Shower))
+
+cleaned_weather_data$Fog <- as.logical(cleaned_weather_data$Fog)
+cleaned_weather_data$Heavy_Fog <- as.logical(cleaned_weather_data$Heavy_Fog)
+cleaned_weather_data$Thunder <- as.logical(cleaned_weather_data$Thunder)
+cleaned_weather_data$Ice_Rain <- as.logical(cleaned_weather_data$Ice_Rain)
+cleaned_weather_data$Hail <- as.logical(cleaned_weather_data$Hail)
+cleaned_weather_data$Glaze <- as.logical(cleaned_weather_data$Glaze)
+cleaned_weather_data$Dust <- as.logical(cleaned_weather_data$Dust)
+cleaned_weather_data$Smoke <- as.logical(cleaned_weather_data$Smoke)
+cleaned_weather_data$Blowing_Snow <- as.logical(cleaned_weather_data$Blowing_Snow)
+cleaned_weather_data$Tornado <- as.logical(cleaned_weather_data$Tornado)
+cleaned_weather_data$High_Winds <- as.logical(cleaned_weather_data$High_Winds)
+cleaned_weather_data$Mist <- as.logical(cleaned_weather_data$Mist)
+cleaned_weather_data$Drizzle <- as.logical(cleaned_weather_data$Drizzle)
+cleaned_weather_data$Freezing_Drizzle <- as.logical(cleaned_weather_data$Freezing_Drizzle)
+cleaned_weather_data$Rain <- as.logical(cleaned_weather_data$Rain)
+cleaned_weather_data$Freezing_Rain <- as.logical(cleaned_weather_data$Freezing_Rain)
+cleaned_weather_data$Snow_Precip <- as.logical(cleaned_weather_data$Snow_Precip)
+cleaned_weather_data$Unknown_Precip <- as.logical(cleaned_weather_data$Unknown_Precip)
+cleaned_weather_data$Ground_Fog <- as.logical(cleaned_weather_data$Ground_Fog)
+cleaned_weather_data$Ice_Fog <- as.logical(cleaned_weather_data$Ice_Fog)
+cleaned_weather_data$Thunder_2 <- as.logical(cleaned_weather_data$Thunder_2)
+cleaned_weather_data$Rain_Snow_Shower <- as.logical(cleaned_weather_data$Rain_Snow_Shower)
 ```
+
 
 ```{r}
 cleaned_park_data <- select(park_data, -c(OBJECTID, the_geom, GISOBJID))
 cleaned_park_data <- rename(cleaned_park_data, Longitude = X_COORD, Latitude = Y_COORD)
+
+cleaned_park_data$PARK_NO <- as.factor(cleaned_park_data$PARK_NO)
+cleaned_park_data$PARK <- as.factor(cleaned_park_data$PARK)
+cleaned_park_data$FACILITY_N <- as.factor(cleaned_park_data$FACILITY_N)
+cleaned_park_data$FACILITY_T <- as.factor(cleaned_park_data$FACILITY_T)
 ```
 
 ```{r}
 cleaned_library_data <- select(library_data, -c("HOURS OF OPERATION", ADDRESS, CITY, STATE, ZIP, PHONE, WEBSITE))
 cleaned_library_data$LOCATION <- str_remove_all(cleaned_library_data$LOCATION, "[ \\(\\)]")
 cleaned_library_data <- cleaned_library_data %>% separate(LOCATION, c("Latitude", "Longitude"), ",")
+
+cleaned_library_data$NAME <- as.factor(cleaned_library_data$NAME) 
 ```
 
 ```{r}
 cleaned_art_data <- select(art_data, -c("X COORDINATE", "Y COORDINATE", LOCATION, OWNER))
 cleaned_art_data <- rename(cleaned_art_data, Longitude = LONGITUDE, Latitude = LATITUDE)
+
+cleaned_art_data$`PARK NAME` <- as.factor(cleaned_art_data$`PARK NAME`)
+cleaned_art_data$`PARK NUMBER` <- as.factor(cleaned_art_data$`PARK NUMBER`)
+cleaned_art_data$ARTIST <- as.factor(cleaned_art_data$ARTIST)
 ```
 
 ### Combining Data
@@ -156,17 +244,18 @@ combined_data <- cleaned_crime_data %>% left_join(cleaned_weather_data, by="Date
 combined_data <- select(combined_data, -Date)
 
 # Cleaning up previous data sets in environment
-rm(crime_data)
-rm(weather_data)
-rm(park_data)
-rm(library_data)
 rm(art_data)
+rm(crime_data)
+rm(library_data)
+rm(park_data)
+rm(weather_data)
 ```
 
 
 
 #### Adding Nearest Park To Crime
-```{r}
+```{r eval=FALSE}
+
 park_locations <-cleaned_park_data %>%
   group_by(PARK_NO) %>%
   summarize_at(vars(Longitude:Latitude), mean)
@@ -205,3 +294,63 @@ closest_parks <- apply(combined_data, MARGIN=1, FUN=get_closest_park_function)
 
 ## Data Analysis and Visualization
 In this section, we look at the different datasets that are being imported, and create basic visualizations to determine what the makeup and distribution of the data is. 
+
+### Chicago Crime Dataset
+
+
+
+### NOAA Chicago Weather Dataset
+
+
+
+### Chicago Park Dataset
+
+There are a total of `r length(unique(park_data$PARK))` unique parks in the dataset.
+
+There are a total of `r length(unique(park_data$FACILITY_N))` unique facility types in the dataset.
+
+There are a total of `r length(unique(park_data$FACILITY_T))` unique facility locations in the dataset.
+
+```{r}
+ggplot(cleaned_park_data, aes(x=Longitude, y=Latitude)) +
+  ggtitle("Location of Parks") +
+  geom_point()
+```
+
+
+```{r}
+cleaned_park_data %>%
+  mutate(fac_type=FACILITY_N %>% fct_infreq()) %>%
+  mutate(fac_type=fct_lump(fac_type, n=20)) %>%
+  ggplot(aes(x=fac_type)) +
+  ggtitle("Count of Facility Types") +
+  xlab("Facility Type") + 
+  ylab("Count") +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_bar()
+```
+```{r}
+cleaned_park_data %>%
+  mutate(fac_type=FACILITY_T %>% fct_infreq()) %>%
+  ggplot(aes(x=fac_type)) +
+  ggtitle("Count of Facility Locations") +
+  xlab("Facility Location") + 
+  ylab("Count") +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_bar()
+```
+
+### Chicago Library Dataset
+
+
+
+### Chicago Public Art Dataset
+
+
+
+
+
+
+
+
+
