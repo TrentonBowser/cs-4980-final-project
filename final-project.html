@@ -170,49 +170,22 @@ pre code {
 </div>
 
 
-<p>This is an <a href="http://rmarkdown.rstudio.com">R Markdown</a> Notebook. When you execute code within the notebook, the results appear beneath the code.</p>
-<p>Try executing this chunk by clicking the <em>Run</em> button within the chunk or by placing your cursor inside it and pressing <em>Ctrl+Shift+Enter</em>.</p>
-<p>Also <em>Ctrl+Enter</em> runs just the line you are on.</p>
-<p>Add a new chunk by clicking the <em>Insert Chunk</em> button on the toolbar or by pressing <em>Ctrl+Alt+I</em>.</p>
-<pre class="r"><code>library(tidyverse)</code></pre>
-<pre><code>## Warning: package &#39;tidyverse&#39; was built under R version 4.0.5</code></pre>
-<pre><code>## -- Attaching packages --------------------------------------- tidyverse 1.3.1 --</code></pre>
-<pre><code>## v ggplot2 3.3.5     v purrr   0.3.4
-## v tibble  3.1.6     v dplyr   1.0.7
-## v tidyr   1.1.4     v stringr 1.4.0
-## v readr   2.1.1     v forcats 0.5.1</code></pre>
-<pre><code>## Warning: package &#39;ggplot2&#39; was built under R version 4.0.5</code></pre>
-<pre><code>## Warning: package &#39;tibble&#39; was built under R version 4.0.5</code></pre>
-<pre><code>## Warning: package &#39;tidyr&#39; was built under R version 4.0.5</code></pre>
-<pre><code>## Warning: package &#39;readr&#39; was built under R version 4.0.5</code></pre>
-<pre><code>## Warning: package &#39;purrr&#39; was built under R version 4.0.5</code></pre>
-<pre><code>## Warning: package &#39;dplyr&#39; was built under R version 4.0.5</code></pre>
-<pre><code>## Warning: package &#39;stringr&#39; was built under R version 4.0.5</code></pre>
-<pre><code>## Warning: package &#39;forcats&#39; was built under R version 4.0.5</code></pre>
-<pre><code>## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
-## x dplyr::filter() masks stats::filter()
-## x dplyr::lag()    masks stats::lag()</code></pre>
-<pre class="r"><code>library(dplyr)
+<div id="package-importing" class="section level2">
+<h2>Package Importing</h2>
+<p>In this project, we will be utilizing</p>
+<pre class="r"><code>library(tidyverse)
 library(lubridate)</code></pre>
-<pre><code>## Warning: package &#39;lubridate&#39; was built under R version 4.0.5</code></pre>
-<pre><code>## 
-## Attaching package: &#39;lubridate&#39;</code></pre>
-<pre><code>## The following objects are masked from &#39;package:base&#39;:
-## 
-##     date, intersect, setdiff, union</code></pre>
-<div id="data-loading" class="section level2">
-<h2>Data Loading</h2>
+</div>
+<div id="dataset-importing" class="section level2">
+<h2>Dataset Importing</h2>
+<p>We have decided to use multiple different datasets for this project, allowing us to pull broader and more impactful relations within our data. Each of the datasets we are using will be imported below, with an explanation and information on each.</p>
+<div id="chicago-crime-dataset" class="section level3">
+<h3>Chicago Crime Dataset</h3>
+<p>The Chicago Crime dataset contains records of most crimes that the Chicago Police responded to, between the years of 2001 to present, and has been aggregated by the City of Chicago.</p>
+<p>The dataset contains nearly 750,000 entries, with 22 total features. Features include information about the date and location of the crime, as well as information about the type of crime and description of events. During this experiment, we will primarily be using the <code>Primary Type</code> feature (listing the type of crime) as a target variable, in order to determine if there are external factors to the types of crimes being predicted.</p>
+<p>This dataset can be sourced from the <a href="https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-Present/ijzp-q8t2">City of Chicago website</a>.</p>
 <pre class="r"><code>crime_data &lt;- read_csv(
-  &quot;chicago-crime-dataset.csv&quot;,
-  col_names = TRUE,
-  locale = locale(&quot;en&quot;, tz=&quot;US/Central&quot;),
-  na = c(&quot;&quot;, &quot;NA&quot;),
-  skip_empty_rows = TRUE,
-  show_col_types = FALSE,
-)
-
-weather_data &lt;- read_csv(
-  &quot;noaa-chicago-weather.csv&quot;,
+  &quot;data/chicago-crime-dataset.csv&quot;,
   col_names = TRUE,
   locale = locale(&quot;en&quot;, tz=&quot;US/Central&quot;),
   na = c(&quot;&quot;, &quot;NA&quot;),
@@ -220,30 +193,99 @@ weather_data &lt;- read_csv(
   show_col_types = FALSE,
 )</code></pre>
 </div>
-<div id="data-cleaning" class="section level2">
-<h2>Data Cleaning</h2>
+<div id="noaa-chicago-weather-dataset" class="section level3">
+<h3>NOAA Chicago Weather Dataset</h3>
+<p>The NOAA Chicago Weather dataset contains over 25,000 entries, corresponding to daily weather information from the Chicago area for roughly the last 65 years, all recorded by a Chicago weather station and aggregated by the National Oceanic and Atmospheric Administration (NOAA).</p>
+<p>This dataset contains information about the location of the weather station taking the data, information about average temperature, wind speeds, precipitation, snow, and other inclement weather. We will be using this dataset to determine whether or not certain weather events have an impact on the types of crimes being committed, and if more severe crimes are more likely during certain weather events.</p>
+<p>This dataset can be sourced from the <a href="https://www.weather.gov/wrh/Climate?wfo=lot">NOAA website</a>.</p>
+<pre class="r"><code>weather_data &lt;- read_csv(
+  &quot;data/noaa-chicago-weather.csv&quot;,
+  col_names = TRUE,
+  locale = locale(&quot;en&quot;, tz=&quot;US/Central&quot;),
+  na = c(&quot;&quot;, &quot;NA&quot;),
+  skip_empty_rows = TRUE,
+  show_col_types = FALSE,
+)</code></pre>
+</div>
+<div id="chicago-park-dataset" class="section level3">
+<h3>Chicago Park Dataset</h3>
+<p>The Chicago Park dataset contains over 4300 entries, corresponding to different facilities and locations of public parks in the Greater Chicago area. All entries were recorded and distributed by the City of Chicago.</p>
+<p>This dataset contains locations and boundaries of the public parks within the Chicago area, along with the facilities located inside of the parks (such as tennis courts, pools, soccer fields, etc). In addition to this, the dataset contains information about the park ID internal to the City of Chicago’s records, as well as the park name. We will be using this dataset to determine whether or not certain parks are correlated to the severity and/or rate of crimes in their area.</p>
+<p>This dataset can be sourced from the <a href="https://data.cityofchicago.org/Parks-Recreation/Parks-Chicago-Park-District-Facilities-current-/5yyk-qt9y">City of Chicago website</a>.</p>
+<pre class="r"><code>park_data &lt;- read_csv(
+  &quot;data/chicago-parks-data.csv&quot;,
+  col_names = TRUE,
+  locale = locale(&quot;en&quot;, tz=&quot;US/Central&quot;),
+  na = c(&quot;&quot;, &quot;NA&quot;),
+  skip_empty_rows = TRUE,
+  show_col_types = FALSE,
+)</code></pre>
+</div>
+<div id="chicago-library-dataset" class="section level3">
+<h3>Chicago Library Dataset</h3>
+<p>The Chicago Library dataset contains over 80 entries of libraries in the Chicago area. It has been aggregated and distributed by the City of Chicago.</p>
+<p>This dataset contains location data (latitude, longitude, and address) for libraries in the Chicago area, as well as the library name, hours of operation, and contact information. We will be using this dataset to determine whether or not certain libraries are correlated to the severity and/or rates of crimes in their area.</p>
+<p>This dataset can be sourced from the <a href="https://data.cityofchicago.org/Education/Libraries-Locations-Hours-and-Contact-Information-/wa2i-tm5d">City of Chicago website</a>.</p>
+<pre class="r"><code>library_data &lt;- read_csv(
+  &quot;data/chicago-libraries-data.csv&quot;,
+  col_names = TRUE,
+  locale = locale(&quot;en&quot;, tz=&quot;US/Central&quot;),
+  na = c(&quot;&quot;, &quot;NA&quot;),
+  skip_empty_rows = TRUE,
+  show_col_types = FALSE,
+)</code></pre>
+</div>
+<div id="chicago-public-art-dataset" class="section level3">
+<h3>Chicago Public Art Dataset</h3>
+<p>The Chicago Public Art dataset contains nearly 200 entries of public art locations in Chicago parks. This dataset has been aggregated and distributed by the City of Chicago.</p>
+<p>This dataset contains information about the parks containing the artwork, the type of art, the artist, the owner, and latitude/longitude location of the art piece. We will be using it to determine if there is any difference in the types of crimes, or if more severe crimes are committed more/less often within close proximity to public art establishments.</p>
+<p>This dataset can be sourced from the <a href="https://data.cityofchicago.org/Parks-Recreation/Parks-Public-Art/sj6t-9cju/data">City of Chicago website</a>.</p>
+<pre class="r"><code>art_data &lt;- read_csv(
+  &quot;data/chicago-public-art-data.csv&quot;,
+  col_names = TRUE,
+  locale = locale(&quot;en&quot;, tz=&quot;US/Central&quot;),
+  na = c(&quot;&quot;, &quot;NA&quot;),
+  skip_empty_rows = TRUE,
+  show_col_types = FALSE,
+)</code></pre>
+</div>
+</div>
+<div id="data-preprocessing" class="section level2">
+<h2>Data Preprocessing</h2>
+<p>In this section, we pre-process the data before testing and modelling on it. This includes removing un-needed columns in the data, as well as combining the data into a single, usable source.</p>
+<div id="data-cleaning" class="section level3">
+<h3>Data Cleaning</h3>
 <pre class="r"><code>cleaned_weather_data &lt;- select(weather_data, -c(STATION, NAME, LATITUDE, LONGITUDE, ELEVATION))
 cleaned_weather_data$DATE &lt;- mdy(cleaned_weather_data$DATE)
 cleaned_weather_data &lt;- rename(cleaned_weather_data, Date = DATE)</code></pre>
 <pre class="r"><code>cleaned_crime_data &lt;- select(crime_data, -c(ID,&#39;Case Number&#39; , Block, &#39;X Coordinate&#39;, &#39;Y Coordinate&#39;, Year, &#39;Updated On&#39;, Location))
 cleaned_crime_data$DateTime &lt;- mdy_hms(cleaned_crime_data$Date)
-cleaned_crime_data$Date &lt;- date(cleaned_crime_data$DateTime)
-head(cleaned_crime_data)</code></pre>
-<div data-pagedtable="false">
-<script data-pagedtable-source type="application/json">
-{"columns":[{"label":["Date"],"name":[1],"type":["date"],"align":["right"]},{"label":["IUCR"],"name":[2],"type":["chr"],"align":["left"]},{"label":["Primary Type"],"name":[3],"type":["chr"],"align":["left"]},{"label":["Description"],"name":[4],"type":["chr"],"align":["left"]},{"label":["Location Description"],"name":[5],"type":["chr"],"align":["left"]},{"label":["Arrest"],"name":[6],"type":["lgl"],"align":["right"]},{"label":["Domestic"],"name":[7],"type":["lgl"],"align":["right"]},{"label":["Beat"],"name":[8],"type":["chr"],"align":["left"]},{"label":["District"],"name":[9],"type":["chr"],"align":["left"]},{"label":["Ward"],"name":[10],"type":["dbl"],"align":["right"]},{"label":["Community Area"],"name":[11],"type":["dbl"],"align":["right"]},{"label":["FBI Code"],"name":[12],"type":["chr"],"align":["left"]},{"label":["Latitude"],"name":[13],"type":["dbl"],"align":["right"]},{"label":["Longitude"],"name":[14],"type":["dbl"],"align":["right"]},{"label":["DateTime"],"name":[15],"type":["dttm"],"align":["right"]}],"data":[{"1":"2015-09-05","2":"0486","3":"BATTERY","4":"DOMESTIC BATTERY SIMPLE","5":"RESIDENCE","6":"FALSE","7":"TRUE","8":"0924","9":"009","10":"12","11":"61","12":"08B","13":"41.81512","14":"-87.67000","15":"2015-09-05 13:30:00"},{"1":"2015-09-04","2":"0870","3":"THEFT","4":"POCKET-PICKING","5":"CTA BUS","6":"FALSE","7":"FALSE","8":"1511","9":"015","10":"29","11":"25","12":"06","13":"41.89508","14":"-87.76540","15":"2015-09-04 11:30:00"},{"1":"2018-09-01","2":"0810","3":"THEFT","4":"OVER $500","5":"RESIDENCE","6":"FALSE","7":"TRUE","8":"0631","9":"006","10":"8","11":"44","12":"06","13":"NA","14":"NA","15":"2018-09-01 00:01:00"},{"1":"2015-09-05","2":"2023","3":"NARCOTICS","4":"POSS: HEROIN(BRN/TAN)","5":"SIDEWALK","6":"TRUE","7":"FALSE","8":"1412","9":"014","10":"35","11":"21","12":"18","13":"41.93741","14":"-87.71665","15":"2015-09-05 12:45:00"},{"1":"2015-09-05","2":"0560","3":"ASSAULT","4":"SIMPLE","5":"APARTMENT","6":"FALSE","7":"TRUE","8":"1522","9":"015","10":"28","11":"25","12":"08A","13":"41.88190","14":"-87.75512","15":"2015-09-05 13:00:00"},{"1":"2015-09-05","2":"0610","3":"BURGLARY","4":"FORCIBLE ENTRY","5":"RESIDENCE","6":"FALSE","7":"FALSE","8":"0614","9":"006","10":"21","11":"71","12":"05","13":"41.74438","14":"-87.65843","15":"2015-09-05 10:55:00"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
-  </script>
+cleaned_crime_data$Date &lt;- date(cleaned_crime_data$DateTime)</code></pre>
 </div>
-</div>
-<div id="combining-data" class="section level2">
-<h2>Combining Data</h2>
+<div id="combining-data" class="section level3">
+<h3>Combining Data</h3>
 <pre class="r"><code>combined_data &lt;- cleaned_crime_data %&gt;% left_join(cleaned_weather_data, by=&quot;Date&quot;)
+combined_data &lt;- select(combined_data, -Date)
 
-# Cleaning up previous files in environment
+# Cleaning up previous data sets in environment
 rm(crime_data)
 rm(weather_data)
 rm(cleaned_weather_data)
 rm(cleaned_crime_data)</code></pre>
+</div>
+<div id="final-prepared-data" class="section level3">
+<h3>Final Prepared Data</h3>
+<pre class="r"><code>head(combined_data)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["IUCR"],"name":[1],"type":["chr"],"align":["left"]},{"label":["Primary Type"],"name":[2],"type":["chr"],"align":["left"]},{"label":["Description"],"name":[3],"type":["chr"],"align":["left"]},{"label":["Location Description"],"name":[4],"type":["chr"],"align":["left"]},{"label":["Arrest"],"name":[5],"type":["lgl"],"align":["right"]},{"label":["Domestic"],"name":[6],"type":["lgl"],"align":["right"]},{"label":["Beat"],"name":[7],"type":["chr"],"align":["left"]},{"label":["District"],"name":[8],"type":["chr"],"align":["left"]},{"label":["Ward"],"name":[9],"type":["dbl"],"align":["right"]},{"label":["Community Area"],"name":[10],"type":["dbl"],"align":["right"]},{"label":["FBI Code"],"name":[11],"type":["chr"],"align":["left"]},{"label":["Latitude"],"name":[12],"type":["dbl"],"align":["right"]},{"label":["Longitude"],"name":[13],"type":["dbl"],"align":["right"]},{"label":["DateTime"],"name":[14],"type":["dttm"],"align":["right"]},{"label":["ACMH"],"name":[15],"type":["dbl"],"align":["right"]},{"label":["ACSH"],"name":[16],"type":["dbl"],"align":["right"]},{"label":["AWND"],"name":[17],"type":["dbl"],"align":["right"]},{"label":["FMTM"],"name":[18],"type":["dbl"],"align":["right"]},{"label":["PGTM"],"name":[19],"type":["dbl"],"align":["right"]},{"label":["PRCP"],"name":[20],"type":["dbl"],"align":["right"]},{"label":["PSUN"],"name":[21],"type":["dbl"],"align":["right"]},{"label":["SNOW"],"name":[22],"type":["dbl"],"align":["right"]},{"label":["SNWD"],"name":[23],"type":["dbl"],"align":["right"]},{"label":["TAVG"],"name":[24],"type":["dbl"],"align":["right"]},{"label":["TMAX"],"name":[25],"type":["dbl"],"align":["right"]},{"label":["TMIN"],"name":[26],"type":["dbl"],"align":["right"]},{"label":["TSUN"],"name":[27],"type":["dbl"],"align":["right"]},{"label":["WDF1"],"name":[28],"type":["dbl"],"align":["right"]},{"label":["WDF2"],"name":[29],"type":["dbl"],"align":["right"]},{"label":["WDF5"],"name":[30],"type":["dbl"],"align":["right"]},{"label":["WDFG"],"name":[31],"type":["dbl"],"align":["right"]},{"label":["WESD"],"name":[32],"type":["dbl"],"align":["right"]},{"label":["WSF1"],"name":[33],"type":["dbl"],"align":["right"]},{"label":["WSF2"],"name":[34],"type":["dbl"],"align":["right"]},{"label":["WSF5"],"name":[35],"type":["dbl"],"align":["right"]},{"label":["WSFG"],"name":[36],"type":["dbl"],"align":["right"]},{"label":["WSFM"],"name":[37],"type":["dbl"],"align":["right"]},{"label":["WT01"],"name":[38],"type":["dbl"],"align":["right"]},{"label":["WT02"],"name":[39],"type":["dbl"],"align":["right"]},{"label":["WT03"],"name":[40],"type":["dbl"],"align":["right"]},{"label":["WT04"],"name":[41],"type":["dbl"],"align":["right"]},{"label":["WT05"],"name":[42],"type":["dbl"],"align":["right"]},{"label":["WT06"],"name":[43],"type":["dbl"],"align":["right"]},{"label":["WT07"],"name":[44],"type":["dbl"],"align":["right"]},{"label":["WT08"],"name":[45],"type":["dbl"],"align":["right"]},{"label":["WT09"],"name":[46],"type":["dbl"],"align":["right"]},{"label":["WT10"],"name":[47],"type":["lgl"],"align":["right"]},{"label":["WT11"],"name":[48],"type":["dbl"],"align":["right"]},{"label":["WT13"],"name":[49],"type":["dbl"],"align":["right"]},{"label":["WT14"],"name":[50],"type":["dbl"],"align":["right"]},{"label":["WT15"],"name":[51],"type":["dbl"],"align":["right"]},{"label":["WT16"],"name":[52],"type":["dbl"],"align":["right"]},{"label":["WT17"],"name":[53],"type":["dbl"],"align":["right"]},{"label":["WT18"],"name":[54],"type":["dbl"],"align":["right"]},{"label":["WT19"],"name":[55],"type":["dbl"],"align":["right"]},{"label":["WT21"],"name":[56],"type":["dbl"],"align":["right"]},{"label":["WT22"],"name":[57],"type":["dbl"],"align":["right"]},{"label":["WV03"],"name":[58],"type":["dbl"],"align":["right"]},{"label":["WV20"],"name":[59],"type":["lgl"],"align":["right"]}],"data":[{"1":"0486","2":"BATTERY","3":"DOMESTIC BATTERY SIMPLE","4":"RESIDENCE","5":"FALSE","6":"TRUE","7":"0924","8":"009","9":"12","10":"61","11":"08B","12":"41.81512","13":"-87.67000","14":"2015-09-05 13:30:00","15":"NA","16":"NA","17":"7.16","18":"NA","19":"NA","20":"0.00","21":"NA","22":"0","23":"0","24":"75","25":"87","26":"69","27":"NA","28":"NA","29":"150","30":"170","31":"NA","32":"NA","33":"NA","34":"16.1","35":"19.9","36":"NA","37":"NA","38":"1","39":"NA","40":"NA","41":"NA","42":"NA","43":"NA","44":"NA","45":"NA","46":"NA","47":"NA","48":"NA","49":"NA","50":"NA","51":"NA","52":"NA","53":"NA","54":"NA","55":"NA","56":"NA","57":"NA","58":"NA","59":"NA"},{"1":"0870","2":"THEFT","3":"POCKET-PICKING","4":"CTA BUS","5":"FALSE","6":"FALSE","7":"1511","8":"015","9":"29","10":"25","11":"06","12":"41.89508","13":"-87.76540","14":"2015-09-04 11:30:00","15":"NA","16":"NA","17":"5.37","18":"NA","19":"NA","20":"0.00","21":"NA","22":"0","23":"0","24":"74","25":"85","26":"68","27":"NA","28":"NA","29":"70","30":"70","31":"NA","32":"NA","33":"NA","34":"14.1","35":"17.0","36":"NA","37":"NA","38":"NA","39":"NA","40":"NA","41":"NA","42":"NA","43":"NA","44":"NA","45":"NA","46":"NA","47":"NA","48":"NA","49":"NA","50":"NA","51":"NA","52":"NA","53":"NA","54":"NA","55":"NA","56":"NA","57":"NA","58":"NA","59":"NA"},{"1":"0810","2":"THEFT","3":"OVER $500","4":"RESIDENCE","5":"FALSE","6":"TRUE","7":"0631","8":"006","9":"8","10":"44","11":"06","12":"NA","13":"NA","14":"2018-09-01 00:01:00","15":"NA","16":"NA","17":"7.83","18":"NA","19":"NA","20":"0.16","21":"NA","22":"0","23":"0","24":"76","25":"86","26":"72","27":"NA","28":"NA","29":"210","30":"200","31":"NA","32":"NA","33":"NA","34":"21.9","35":"29.1","36":"NA","37":"NA","38":"1","39":"NA","40":"1","41":"NA","42":"NA","43":"NA","44":"NA","45":"NA","46":"NA","47":"NA","48":"NA","49":"NA","50":"NA","51":"NA","52":"NA","53":"NA","54":"NA","55":"NA","56":"NA","57":"NA","58":"NA","59":"NA"},{"1":"2023","2":"NARCOTICS","3":"POSS: HEROIN(BRN/TAN)","4":"SIDEWALK","5":"TRUE","6":"FALSE","7":"1412","8":"014","9":"35","10":"21","11":"18","12":"41.93741","13":"-87.71665","14":"2015-09-05 12:45:00","15":"NA","16":"NA","17":"7.16","18":"NA","19":"NA","20":"0.00","21":"NA","22":"0","23":"0","24":"75","25":"87","26":"69","27":"NA","28":"NA","29":"150","30":"170","31":"NA","32":"NA","33":"NA","34":"16.1","35":"19.9","36":"NA","37":"NA","38":"1","39":"NA","40":"NA","41":"NA","42":"NA","43":"NA","44":"NA","45":"NA","46":"NA","47":"NA","48":"NA","49":"NA","50":"NA","51":"NA","52":"NA","53":"NA","54":"NA","55":"NA","56":"NA","57":"NA","58":"NA","59":"NA"},{"1":"0560","2":"ASSAULT","3":"SIMPLE","4":"APARTMENT","5":"FALSE","6":"TRUE","7":"1522","8":"015","9":"28","10":"25","11":"08A","12":"41.88190","13":"-87.75512","14":"2015-09-05 13:00:00","15":"NA","16":"NA","17":"7.16","18":"NA","19":"NA","20":"0.00","21":"NA","22":"0","23":"0","24":"75","25":"87","26":"69","27":"NA","28":"NA","29":"150","30":"170","31":"NA","32":"NA","33":"NA","34":"16.1","35":"19.9","36":"NA","37":"NA","38":"1","39":"NA","40":"NA","41":"NA","42":"NA","43":"NA","44":"NA","45":"NA","46":"NA","47":"NA","48":"NA","49":"NA","50":"NA","51":"NA","52":"NA","53":"NA","54":"NA","55":"NA","56":"NA","57":"NA","58":"NA","59":"NA"},{"1":"0610","2":"BURGLARY","3":"FORCIBLE ENTRY","4":"RESIDENCE","5":"FALSE","6":"FALSE","7":"0614","8":"006","9":"21","10":"71","11":"05","12":"41.74438","13":"-87.65843","14":"2015-09-05 10:55:00","15":"NA","16":"NA","17":"7.16","18":"NA","19":"NA","20":"0.00","21":"NA","22":"0","23":"0","24":"75","25":"87","26":"69","27":"NA","28":"NA","29":"150","30":"170","31":"NA","32":"NA","33":"NA","34":"16.1","35":"19.9","36":"NA","37":"NA","38":"1","39":"NA","40":"NA","41":"NA","42":"NA","43":"NA","44":"NA","45":"NA","46":"NA","47":"NA","48":"NA","49":"NA","50":"NA","51":"NA","52":"NA","53":"NA","54":"NA","55":"NA","56":"NA","57":"NA","58":"NA","59":"NA"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+</div>
+<div id="data-analysis-and-visualization" class="section level2">
+<h2>Data Analysis and Visualization</h2>
+<p>In this section, we look at the different datasets that are being imported, and create basic visualizations to determine what the makeup and distribution of the data is.</p>
 </div>
 
 
