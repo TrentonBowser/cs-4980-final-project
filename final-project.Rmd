@@ -13,15 +13,21 @@ Also *Ctrl+Enter* runs just the line you are on.
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
 
-```{r}
+```{r message=FALSE}
 library(tidyverse)
 library(dplyr)
 library(lubridate)
 ```
 
+## Dataset Importing
+We have decided to use multiple different datasets for this project, allowing us to pull broader and more impactful relations within our data. Each of the datasets we are using will be imported below, with an explanation and information on each.
 
-## Data Loading
+### Chicago Crime Dataset
+The Chicago Crime dataset contains records of most crimes that the Chicago Police responded to, between the years of 2001 to present, and has been aggregated by the City of Chicago. 
 
+The dataset contains nearly 750,000 entries, with 22 total features. Features include information about the date and location of the crime, as well as information about the type of crime and description of events. During this experiment, we will primarily be using the `Primary Type` feature (listing the type of crime) as a target variable, in order to determine if there are external factors to the types of crimes being predicted.
+
+This dataset can be sourced from the [City of Chicago website](https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-Present/ijzp-q8t2).
 ```{r}
 crime_data <- read_csv(
   "data/chicago-crime-dataset.csv",
@@ -31,7 +37,16 @@ crime_data <- read_csv(
   skip_empty_rows = TRUE,
   show_col_types = FALSE,
 )
+```
 
+### NOAA Chicago Weather Dataset
+The NOAA Chicago Weather dataset contains over 25,000 entries, corresponding to daily weather information from the Chicago area for roughly the last 65 years, all recorded by a Chicago weather station and aggregated by the National Oceanic and Atmospheric Administration (NOAA).
+
+This dataset contains information about the location of the weather station taking the data, information about average temperature, wind speeds, precipitation, snow, and other inclement weather. We will be using this dataset to determine whether or not certain weather events have an impact on the types of crimes being committed, and if more severe crimes are more likely during certain weather events.
+
+This dataset can be sourced from the [NOAA website](https://www.weather.gov/wrh/Climate?wfo=lot).
+
+```{r}
 weather_data <- read_csv(
   "data/noaa-chicago-weather.csv",
   col_names = TRUE,
@@ -42,9 +57,64 @@ weather_data <- read_csv(
 )
 ```
 
+### Chicago Park Dataset
+The Chicago Park dataset contains over 4300 entries, corresponding to different facilities and locations of public parks in the Greater Chicago area. All entries were recorded and distributed by the City of Chicago.
 
-## Data Cleaning
+This dataset contains locations and boundaries of the public parks within the Chicago area, along with the facilities located inside of the parks (such as tennis courts, pools, soccer fields, etc). In addition to this, the dataset contains information about the park ID internal to the City of Chicago's records, as well as the park name. We will be using this dataset to determine whether or not certain parks are correlated to the severity and/or rate of crimes in their area.
 
+This dataset can be sourced from the [City of Chicago website](https://data.cityofchicago.org/Parks-Recreation/Parks-Chicago-Park-District-Facilities-current-/5yyk-qt9y).
+
+```{r}
+park_data <- read_csv(
+  "data/chicago-parks-data.csv",
+  col_names = TRUE,
+  locale = locale("en", tz="US/Central"),
+  na = c("", "NA"),
+  skip_empty_rows = TRUE,
+  show_col_types = FALSE,
+)
+```
+
+### Chicago Library Dataset
+The Chicago Library dataset contains over 80 entries of libraries in the Chicago area. It has been aggregated and distributed by the City of Chicago.
+
+This dataset contains location data (latitude, longitude, and address) for libraries in the Chicago area, as well as the library name, hours of operation, and contact information. We will be using this dataset to determine whether or not certain libraries are correlated to the severity and/or rates of crimes in their area.
+
+This dataset can be sourced from the [City of Chicago website](https://data.cityofchicago.org/Education/Libraries-Locations-Hours-and-Contact-Information-/wa2i-tm5d).
+
+```{r}
+library_data <- read_csv(
+  "data/chicago-libraries-data.csv",
+  col_names = TRUE,
+  locale = locale("en", tz="US/Central"),
+  na = c("", "NA"),
+  skip_empty_rows = TRUE,
+  show_col_types = FALSE,
+)
+```
+
+### Chicago Public Art Dataset
+The Chicago Public Art dataset contains nearly 200 entries of public art locations in Chicago parks. This dataset has been aggregated and distributed by the City of Chicago.
+
+This dataset contains information about the parks containing the artwork, the type of art, the artist, the owner, and latitude/longitude location of the art piece. We will be using it to determine if there is any difference in the types of crimes, or if more severe crimes are committed more/less often within close proximity to public art establishments.
+
+This dataset can be sourced from the [City of Chicago website](https://data.cityofchicago.org/Parks-Recreation/Parks-Public-Art/sj6t-9cju/data).
+
+```{r}
+art_data <- read_csv(
+  "data/chicago-public-art-data.csv",
+  col_names = TRUE,
+  locale = locale("en", tz="US/Central"),
+  na = c("", "NA"),
+  skip_empty_rows = TRUE,
+  show_col_types = FALSE,
+)
+```
+
+## Data Preprocessing
+In this section, we pre-process the data before testing and modelling on it. This includes removing un-needed columns in the data, as well as combining the data into a single, usable source.
+
+### Data Cleaning
 ```{r}
 cleaned_weather_data <- select(weather_data, -c(STATION, NAME, LATITUDE, LONGITUDE, ELEVATION))
 cleaned_weather_data$DATE <- mdy(cleaned_weather_data$DATE)
@@ -57,8 +127,7 @@ cleaned_crime_data$DateTime <- mdy_hms(cleaned_crime_data$Date)
 cleaned_crime_data$Date <- date(cleaned_crime_data$DateTime)
 ```
 
-
-## Combining Data
+### Combining Data
 ```{r}
 combined_data <- cleaned_crime_data %>% left_join(cleaned_weather_data, by="Date")
 combined_data <- select(combined_data, -Date)
@@ -70,26 +139,10 @@ rm(cleaned_weather_data)
 rm(cleaned_crime_data)
 ```
 
-
-
+### Final Prepared Data
 ```{r}
 head(combined_data)
 ```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+## Data Analysis and Visualization
+In this section, we look at the different datasets that are being imported, and create basic visualizations to determine what the makeup and distribution of the data is. 
