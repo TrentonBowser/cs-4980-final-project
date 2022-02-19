@@ -188,8 +188,6 @@ cleaned_weather_data <- cleaned_weather_data %>%
          Thunder_2=ifelse(is.na(Thunder_2), 0, Thunder_2),
          Rain_Snow_Shower=ifelse(is.na(Rain_Snow_Shower), 0, Rain_Snow_Shower))
 
-cleaned_weather_data$Date_dm <- cleaned_weather_data$Date
-
 cleaned_weather_data$Fog <- as.logical(cleaned_weather_data$Fog)
 cleaned_weather_data$Heavy_Fog <- as.logical(cleaned_weather_data$Heavy_Fog)
 cleaned_weather_data$Thunder <- as.logical(cleaned_weather_data$Thunder)
@@ -367,6 +365,25 @@ In this section, we look at the different datasets that are being imported, and 
 
 ### Chicago Crime Dataset
 
+There are a total of `r lenth(unique(cleaned_crime_data$IUCR))` unique crimes
+
+```{r}
+ggplot(cleaned_park_data, aes(x=Longitude, y=Latitude)) +
+  ggtitle("Location of Parks") +
+  geom_point()
+```
+
+```{r}
+cleaned_crime_data %>%
+  mutate(fac_type=`Primary Type` %>% fct_infreq()) %>%
+  mutate(fac_type=fct_lump(fac_type, n=20)) %>%
+  ggplot(aes(x=fac_type)) +
+  ggtitle("Instances of Chicago Crimes") +
+  xlab("Primary Crime Type") + 
+  ylab("Count") +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_bar()
+```
 
 
 ### NOAA Chicago Weather Dataset
@@ -387,7 +404,6 @@ ggplot(cleaned_park_data, aes(x=Longitude, y=Latitude)) +
   geom_point()
 ```
 
-
 ```{r}
 cleaned_park_data %>%
   mutate(fac_type=FACILITY_N %>% fct_infreq()) %>%
@@ -399,7 +415,6 @@ cleaned_park_data %>%
   theme(axis.text.x=element_text(angle=45, hjust=1)) +
   geom_bar()
 ```
-
 
 
 ```{r}
