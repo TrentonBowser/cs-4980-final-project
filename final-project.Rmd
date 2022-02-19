@@ -309,11 +309,32 @@ get_closest_library_function <- function(row){
 #closest_libraries <- apply(combined_data, MARGIN=1, FUN=get_closest_library_function)
 #combined_data <- combined_data %>% add_column(closest_library = closest_libraries[1,], library_dist = closest_libraries[2,])
 
-test <- combined_data %>% slice(1:1000)
 closest_libraries <- apply(test, MARGIN=1, FUN=get_closest_library_function)
 test <- test %>% add_column(closest_library = closest_libraries[1,], library_dist = closest_libraries[2,])
 
 ```
+
+#### Adding Nearest Art To Crime
+```{r}
+# Function that finds the closest art and its distance from each crime row
+get_closest_art_function <- function(row){
+  art_distances <- apply(cleaned_art_data, MARGIN=1, FUN=calculate_distance, lat1=as.numeric(row["Latitude"]), long1=as.numeric(row["Longitude"]))
+  closest_art_index <- which.min(art_distances)
+  
+  closest_dist <- art_distances[closest_art_index]
+  closest_art <- (cleaned_art_data %>% slice(closest_art_index))$`PARK NUMBER`
+  
+  return(c(closest_art, closest_dist))
+}
+
+#closest_artwork <- apply(combined_data, MARGIN=1, FUN=get_closest_art_function)
+#combined_data <- add_column(closest_art = closest_artwork[1,], art_dist = closest_artwork[2,])
+
+closest_artwork <- apply(test, MARGIN=1, FUN=get_closest_art_function)
+test <- test %>% add_column(closest_art = closest_artwork[1,], art_dist = closest_artwork[2,])
+
+```
+
 
 
 
