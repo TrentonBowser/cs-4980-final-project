@@ -124,7 +124,7 @@ cleaned_crime_data$DateTime <- mdy_hms(cleaned_crime_data$Date)
 cleaned_crime_data$Date <- date(cleaned_crime_data$DateTime)
 cleaned_crime_data <- cleaned_crime_data %>%
   drop_na() %>%
-  filter(Date > "2021-01-01")
+  filter(Date > "2020-01-01")
 
 cleaned_crime_data$IUCR <- as.factor(cleaned_crime_data$IUCR)
 cleaned_crime_data$`Primary Type` <- as.factor(cleaned_crime_data$`Primary Type`)
@@ -224,8 +224,6 @@ cleaned_park_data$FACILITY_T <- as.factor(cleaned_park_data$FACILITY_T)
 cleaned_library_data <- select(library_data, -c("HOURS OF OPERATION", ADDRESS, CITY, STATE, ZIP, PHONE, WEBSITE))
 cleaned_library_data$LOCATION <- str_remove_all(cleaned_library_data$LOCATION, "[ \\(\\)]")
 cleaned_library_data <- cleaned_library_data %>% separate(LOCATION, c("Latitude", "Longitude"), ",")
-
-cleaned_library_data$NAME <- as.factor(cleaned_library_data$NAME) 
 ```
 
 ```{r}
@@ -287,10 +285,12 @@ get_closest_park_function <- function(row){
 
 #closest_parks <- apply(combined_data, MARGIN=1, FUN=get_closest_park_function)
 #combined_data <- combined_data %>% add_column(closest_park = closest_parks[1,], park_dist = closest_parks[2,])
+#rm(closest_parks)
 
-test <- combined_data %>% slice(1:1000)
-closest_parks <- apply(test, MARGIN=1, FUN=get_closest_park_function)
-test <- test %>% add_column(closest_park = closest_parks[1,], park_dist = closest_parks[2,])
+
+#test <- combined_data %>% slice(1:1000)
+#closest_parks <- apply(test, MARGIN=1, FUN=get_closest_park_function)
+#test <- test %>% add_column(closest_park = closest_parks[1,], park_dist = closest_parks[2,])
 ```
 
 #### Adding Nearest Library To Crime
@@ -308,9 +308,11 @@ get_closest_library_function <- function(row){
 
 #closest_libraries <- apply(combined_data, MARGIN=1, FUN=get_closest_library_function)
 #combined_data <- combined_data %>% add_column(closest_library = closest_libraries[1,], library_dist = closest_libraries[2,])
+#rm(closest_libraries)
 
-closest_libraries <- apply(test, MARGIN=1, FUN=get_closest_library_function)
-test <- test %>% add_column(closest_library = closest_libraries[1,], library_dist = closest_libraries[2,])
+
+#closest_libraries <- apply(test, MARGIN=1, FUN=get_closest_library_function)
+#test <- test %>% add_column(closest_library = closest_libraries[1,], library_dist = closest_libraries[2,])
 
 ```
 
@@ -322,18 +324,28 @@ get_closest_art_function <- function(row){
   closest_art_index <- which.min(art_distances)
   
   closest_dist <- art_distances[closest_art_index]
-  closest_art <- (cleaned_art_data %>% slice(closest_art_index))$`PARK NUMBER`
+  closest_art <- (cleaned_art_data %>% slice(closest_art_index))$`ART`
   
   return(c(closest_art, closest_dist))
 }
 
 #closest_artwork <- apply(combined_data, MARGIN=1, FUN=get_closest_art_function)
-#combined_data <- add_column(closest_art = closest_artwork[1,], art_dist = closest_artwork[2,])
+#combined_data <- combined_data %>% add_column(closest_art = closest_artwork[1,], art_dist = closest_artwork[2,])
+#rm(closest_artwork)
 
-closest_artwork <- apply(test, MARGIN=1, FUN=get_closest_art_function)
-test <- test %>% add_column(closest_art = closest_artwork[1,], art_dist = closest_artwork[2,])
+
+#closest_artwork <- apply(test, MARGIN=1, FUN=get_closest_art_function)
+#test <- test %>% add_column(closest_art = closest_artwork[1,], art_dist = closest_artwork[2,])
 
 ```
+
+
+```{r}
+combined_data$closest_park <- as.factor(combined_data$closest_park)
+combined_data$closest_library <- as.factor(combined_data$closest_library)
+combined_data$closest_art <- as.factor(combined_data$closest_art)
+```
+
 
 
 
