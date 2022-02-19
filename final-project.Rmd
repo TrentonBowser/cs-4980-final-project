@@ -126,6 +126,9 @@ cleaned_crime_data <- cleaned_crime_data %>%
   drop_na() %>%
   filter(Date > "2020-01-01")
 
+cleaned_crime_data$Latitude <- as.numeric((cleaned_crime_data$Latitude))
+cleaned_crime_data$Longitude <- as.numeric((cleaned_crime_data$Longitude))
+
 cleaned_crime_data$IUCR <- as.factor(cleaned_crime_data$IUCR)
 cleaned_crime_data$`Primary Type` <- as.factor(cleaned_crime_data$`Primary Type`)
 cleaned_crime_data$Description <- as.factor(cleaned_crime_data$Description)
@@ -185,6 +188,8 @@ cleaned_weather_data <- cleaned_weather_data %>%
          Thunder_2=ifelse(is.na(Thunder_2), 0, Thunder_2),
          Rain_Snow_Shower=ifelse(is.na(Rain_Snow_Shower), 0, Rain_Snow_Shower))
 
+cleaned_weather_data$Date_dm <- cleaned_weather_data$Date
+
 cleaned_weather_data$Fog <- as.logical(cleaned_weather_data$Fog)
 cleaned_weather_data$Heavy_Fog <- as.logical(cleaned_weather_data$Heavy_Fog)
 cleaned_weather_data$Thunder <- as.logical(cleaned_weather_data$Thunder)
@@ -214,6 +219,9 @@ cleaned_weather_data$Rain_Snow_Shower <- as.logical(cleaned_weather_data$Rain_Sn
 cleaned_park_data <- select(park_data, -c(OBJECTID, the_geom, GISOBJID))
 cleaned_park_data <- rename(cleaned_park_data, Longitude = X_COORD, Latitude = Y_COORD)
 
+cleaned_park_data$Latitude <- as.numeric(cleaned_park_data$Latitude)
+cleaned_park_data$Longitude <- as.numeric(cleaned_park_data$Longitude)
+
 cleaned_park_data$PARK_NO <- as.factor(cleaned_park_data$PARK_NO)
 cleaned_park_data$PARK <- as.factor(cleaned_park_data$PARK)
 cleaned_park_data$FACILITY_N <- as.factor(cleaned_park_data$FACILITY_N)
@@ -224,11 +232,17 @@ cleaned_park_data$FACILITY_T <- as.factor(cleaned_park_data$FACILITY_T)
 cleaned_library_data <- select(library_data, -c("HOURS OF OPERATION", ADDRESS, CITY, STATE, ZIP, PHONE, WEBSITE))
 cleaned_library_data$LOCATION <- str_remove_all(cleaned_library_data$LOCATION, "[ \\(\\)]")
 cleaned_library_data <- cleaned_library_data %>% separate(LOCATION, c("Latitude", "Longitude"), ",")
+
+cleaned_library_data$Latitude <- as.numeric(cleaned_library_data$Latitude)
+cleaned_library_data$Longitude <- as.numeric(cleaned_library_data$Longitude)
 ```
 
 ```{r}
 cleaned_art_data <- select(art_data, -c("X COORDINATE", "Y COORDINATE", LOCATION, OWNER))
 cleaned_art_data <- rename(cleaned_art_data, Longitude = LONGITUDE, Latitude = LATITUDE)
+
+cleaned_art_data$Latitude <- as.numeric(cleaned_art_data$Latitude)
+cleaned_art_data$Longitude <- as.numeric(cleaned_art_data$Longitude)
 
 cleaned_art_data$`PARK NAME` <- as.factor(cleaned_art_data$`PARK NAME`)
 cleaned_art_data$`PARK NUMBER` <- as.factor(cleaned_art_data$`PARK NUMBER`)
@@ -285,8 +299,6 @@ get_closest_park_function <- function(row){
 
 #closest_parks <- apply(combined_data, MARGIN=1, FUN=get_closest_park_function)
 #combined_data <- combined_data %>% add_column(closest_park = closest_parks[1,], park_dist = closest_parks[2,])
-#rm(closest_parks)
-
 
 #test <- combined_data %>% slice(1:1000)
 #closest_parks <- apply(test, MARGIN=1, FUN=get_closest_park_function)
@@ -308,9 +320,8 @@ get_closest_library_function <- function(row){
 
 #closest_libraries <- apply(combined_data, MARGIN=1, FUN=get_closest_library_function)
 #combined_data <- combined_data %>% add_column(closest_library = closest_libraries[1,], library_dist = closest_libraries[2,])
-#rm(closest_libraries)
 
-
+#test <- combined_data %>% slice(1:1000)
 #closest_libraries <- apply(test, MARGIN=1, FUN=get_closest_library_function)
 #test <- test %>% add_column(closest_library = closest_libraries[1,], library_dist = closest_libraries[2,])
 
@@ -360,15 +371,15 @@ In this section, we look at the different datasets that are being imported, and 
 
 ### NOAA Chicago Weather Dataset
 
-
+There are a total of `r length(colnames(cleaned_park_data))` unique features in the dataset.
 
 ### Chicago Park Dataset
 
-There are a total of `r length(unique(park_data$PARK))` unique parks in the dataset.
+There are a total of `r length(unique(cleaned_park_data$PARK))` unique parks in the dataset.
 
-There are a total of `r length(unique(park_data$FACILITY_N))` unique facility types in the dataset.
+There are a total of `r length(unique(cleaned_park_data$FACILITY_N))` unique facility types in the dataset.
 
-There are a total of `r length(unique(park_data$FACILITY_T))` unique facility locations in the dataset.
+There are a total of `r length(unique(cleaned_park_data$FACILITY_T))` unique facility locations in the dataset.
 
 ```{r}
 ggplot(cleaned_park_data, aes(x=Longitude, y=Latitude)) +
@@ -388,6 +399,9 @@ cleaned_park_data %>%
   theme(axis.text.x=element_text(angle=45, hjust=1)) +
   geom_bar()
 ```
+
+
+
 ```{r}
 cleaned_park_data %>%
   mutate(fac_type=FACILITY_T %>% fct_infreq()) %>%
@@ -401,12 +415,25 @@ cleaned_park_data %>%
 
 ### Chicago Library Dataset
 
+There are a total of `r length(unique(cleaned_library_data$NAME))` unique libraries in the dataset.
+
+```{r}
+ggplot(cleaned_library_data, aes(x=Longitude, y=Latitude)) +
+  ggtitle("Location of Libraries") +
+  geom_point()
+```
 
 
 ### Chicago Public Art Dataset
 
+There are a total of `r length(unique(cleaned_art_data$ART))` unique pieces of art in the dataset.
 
+There are a total of `r length(unique(cleaned_art_data$``PARK NUMBER``)` unique locations for art in the dataset. 
 
+```{r}
+scale <- function(x) sprintf("%.1f", x)
 
-
-
+ggplot(cleaned_art_data, aes(x=Longitude, y=Latitude)) +
+  ggtitle("Location of Libraries") +
+  geom_point()
+```
