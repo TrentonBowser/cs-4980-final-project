@@ -15,6 +15,11 @@ library(lubridate)
 
 ## Hypotheses
 
+1) The likelihood of an arrest can be calculated from the type of crime and weather features
+
+2) The likelihood of an arrest can be calculated from the type of crime and the crime's location in relation of libraries, parks, and public art
+
+3) Days with inclement weather will have different amounts of the most common crime (Battery and Theft) than days without inclement weather
 
 
 ## Datasets
