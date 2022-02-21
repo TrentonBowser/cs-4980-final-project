@@ -64,7 +64,6 @@ weather_data <- read_csv(
 ```
 
 
-## Initial Data Cleaning
 ### Chicago Park Dataset
 The Chicago Park dataset contains over 4300 entries, corresponding to different facilities and locations of public parks in the Greater Chicago area. All entries were recorded and distributed by the City of Chicago.
 
@@ -353,14 +352,9 @@ combined_data$library_dist <- as.double(combined_data$library_dist)
 combined_data$art_dist <- as.double(combined_data$art_dist)
 ```
 
-#### Load in Workspace
 ```{r echo=FALSE}
 load("all-data-combined.RData")
 ```
-
-
-
-
 
 ## Data Analysis and Visualization
 In this section, we look at the different datasets that are being imported, and create basic visualizations to determine what the makeup and distribution of the data is. 
@@ -368,7 +362,7 @@ In this section, we look at the different datasets that are being imported, and 
 
 ### Chicago Crime Dataset
 
-There are a total of `r lenth(unique(cleaned_crime_data$IUCR))` unique crimes
+There are a total of `r length(unique(cleaned_crime_data$IUCR))` unique crimes
 
 ```{r}
 ggplot(cleaned_park_data, aes(x=Longitude, y=Latitude)) +
@@ -445,8 +439,6 @@ ggplot(cleaned_library_data, aes(x=Longitude, y=Latitude)) +
 ### Chicago Public Art Dataset
 
 There are a total of `r length(unique(cleaned_art_data$ART))` unique pieces of art in the dataset.
-
-There are a total of `r length(unique(cleaned_art_data$``PARK NUMBER``)` unique locations for art in the dataset. 
 
 ```{r}
 scale <- function(x) sprintf("%.1f", x)
@@ -827,7 +819,7 @@ crime_mann_whitney_test <- function(data, weather_condition) {
 ### Testing days with rain
 ```{r}
 rain_p_values <- crime_mann_whitney_test(combined_data, (combined_data$PRCP > 0.0))
-print(rain_p_values)
+rain_p_values
 ```
 
 These results show that some types of crimes occur statistically different amounts on days with no rain, versus rain being present. With a p-value of 0.05, we can see that the most common crimes in Chicago, `battery` and `theft` occur in different amounts on days with rain versus days without rain. This allows us to reject the null hypothesis for both battery and theft, and accept the alternate hypothesis.
@@ -835,7 +827,7 @@ These results show that some types of crimes occur statistically different amoun
 ### Testing days with snow
 ```{r}
 snow_p_values <- crime_mann_whitney_test(combined_data, (combined_data$SNOW > 0.0))
-print(snow_p_values)
+snow_p_values
 ```
 
 These results show that most types of crimes occur statistically different amounts on days with no snow, versus snow being present. With a p-value of 0.05, we can see that the most common crimes in Chicago, `battery` and `theft` occur significantly different amounts when there is snow, versus there not being snow. This allows us to reject the null hypothesis for both battery and theft, and accept the alternate hypothesis.
@@ -843,7 +835,7 @@ These results show that most types of crimes occur statistically different amoun
 ### Testing days with thunder
 ```{r}
 thunder_p_values <- crime_mann_whitney_test(combined_data, (combined_data$Thunder == TRUE))
-print(thunder_p_values)
+thunder_p_values
 ```
 
 These results show that some types of crimes occur statistically different amounts on days with no thunder, versus thunder being present. With this test, we are assuming Thunder implies more severe rain than above. With a p-value of 0.05, we can see that the most common crimes in Chicago, `battery` and `theft` don't necessarily occur differently. `battery` occurs in a different quantity when thunder is present, whereas `theft` does not. This allows us to reject the null hypothesis for battery, but forces us to accept it for theft, and accept the alternate hypothesis.
@@ -1090,3 +1082,18 @@ This data shows that we cannot definitively predict whether or not there is fog 
 
 ### Recap
 We were able to prove and accept our alternative hypothesis that the weather impacts the number of crimes per day for most crimes in Chicago. When looking to predict the number of crimes per day, and the weather of a given day, our models performed very poorly and failed to predict in most cases. This could likely be improved with other data, but when directly analyzing the correlation between weather and crimes, there is little relationship when looking at continuous variables.
+
+## Results Analysis
+1) Hypothesis 1 was rejected.  We rejected our alternative hypothesis that the likelihood of an arrest occurring for a crime using the crime type and weather data could not be accurately predicted. However, the crime type and some of the weather features such as percipitation, snow, and temperature were statistically significant compared to an arrest occurring. The significance was not enough to contribute to the predictions of a model.
+
+
+
+2) Hypothesis 2 was accepted. We were able to prove and accept our alternative hypothesis that the likelihood of an arrest occurring for a crime was impacted by the crime type and the crime's location in relation to parks, public art, and libraries. Our best model was able to predict arrest likelihood with a 90.3% accuracy. The crime type, crime location, and crimes distance to the nearest park, public art, and library were all statistically significant compared to an arrest occurring.
+
+
+
+3) Hypothesis 3 was accepted. We were able to prove and accept our alternative hypothesis that the weather impacts the number of crimes per day for most crimes in Chicago. When looking to predict the number of crimes per day, and the weather of a given day, our models performed very poorly and failed to predict in most cases. This could likely be improved with other data, but when directly analyzing the correlation between weather and crimes, there is little relationship when looking at continuous variables.
+
+We learned a lot about evaluating hypotheses during this project. Specifically, we had a few ideas of what to look for, but didn't know what to expect. Through our analysis, we found that some of our hypotheses didn't translate to models - making it impossible to generate predictions in some cases. We were able to learn a lot about testing different hypotheses, and working off of what was evaluated. For example, working on hypothesis 3, we figured out that we weren't able to model on the data, however, we were able to derive additional tests (such as looking at the predictive capability of different features) to determine the composition and layout of the data. 
+
+We also were able to learn a lot about R through this assignment. Focusing more on statistical testing in R would have made different areas of this project much easier, but we all feel that we were able to pick up on the assignment relatively fast.

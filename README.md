@@ -27,3 +27,8 @@ The datasets used in the project include:
 3) Hypothesis 3 was accepted. We were able to prove and accept our alternative hypothesis that the weather impacts the number of crimes per day for most crimes in Chicago. When looking to predict the number of crimes per day, and the weather of a given day, our models performed very poorly and failed to predict in most cases. This could likely be improved with other data, but when directly analyzing the correlation between weather and crimes, there is little relationship when looking at continuous variables.
 
 The process to arrive at these conclusions can be found within our [final-project.html](./final-project.html) notebook.
+
+### Conclusion
+We learned a lot about evaluating hypotheses during this project. Specifically, we had a few ideas of what to look for, but didn't know what to expect. Through our analysis, we found that some of our hypotheses didn't translate to models - making it impossible to generate predictions in some cases. We were able to learn a lot about testing different hypotheses, and working off of what was evaluated. For example, working on hypothesis 3, we figured out that we weren't able to model on the data, however, we were able to derive additional tests (such as looking at the predictive capability of different features) to determine the composition and layout of the data. 
+
+We also were able to learn a lot about R through this assignment. Focusing more on statistical testing in R would have made different areas of this project much easier, but we all feel that we were able to pick up on the assignment relatively fast.
