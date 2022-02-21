@@ -454,7 +454,178 @@ ggplot(cleaned_art_data, aes(x=Longitude, y=Latitude)) +
 ```
 
 
+### Hypothesis 1 Testing
+Hypothesis: The likelihood of an arrest can be calculated from the type of crime and weather features.
 
+
+#### Visualization
+We wanted to visualize some of the relationships between our variables of interest. Here we have the amount of precipitation that day (in inches) mapped with whether or not they resulted in an arrest.
+```{r}
+ggplot(combined_data, aes(x=Arrest, y= PRCP)) +
+  xlab("Arrest") + 
+  ylab("Precipitation That Day (in)") +
+  geom_boxplot() +
+  coord_cartesian(ylim =  c(0, 0.5))
+```
+
+Then we looked for any relationship between arrests and the amount of snow Chicago got that day (in inches). 
+```{r}
+ggplot(combined_data, aes(x=Arrest, y= SNOW)) + 
+  xlab("Arrest") + 
+  ylab("Amount of Snow That Day (in)") +
+  geom_boxplot()
+```
+
+Then we looked for any relationship between arrests and the average temperature for the day.
+```{r}
+ggplot(combined_data, aes(x=Arrest, y= TAVG)) + 
+  xlab("Arrest") + 
+  ylab("Average Temperature for the Day (F)") +
+  geom_boxplot()
+```
+
+Then we looked for any relationship between arrests and the highest temperature of the day.
+```{r}
+ggplot(combined_data, aes(x=Arrest, y= TMAX)) + 
+  xlab("Arrest") + 
+  ylab("Highest Temperature of the Day (F)") +
+  geom_boxplot()
+```
+
+Then we looked for any relationship between arrests and the lowest temperature of the day. 
+```{r}
+ggplot(combined_data, aes(x=Arrest, y= TMIN)) + 
+  xlab("Arrest") + 
+  ylab("Lowest Temperature of the Day (F)") +
+  geom_boxplot()
+```
+
+Then we looked for any relationship between the type of crime and the amount of precipitation. 
+```{r}
+combined_data %>% mutate(fac_type=`Primary Type` %>% fct_infreq()) %>%
+  mutate(fac_type=fct_lump(fac_type, n=10)) %>%
+  ggplot(aes(x=fac_type, y= PRCP)) +
+  ggtitle("Chicago Precipitation and Crime Types") +
+  xlab("Primary Crime Type") + 
+  ylab("Amount of Precipitation") +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_boxplot() +
+  coord_cartesian(ylim =  c(0, 0.15))
+```
+
+Then we looked for any relationship between the type of crime and the average temperature for the day. 
+```{r}
+combined_data %>% mutate(fac_type=`Primary Type` %>% fct_infreq()) %>%
+  mutate(fac_type=fct_lump(fac_type, n=10)) %>%
+  ggplot(aes(x=fac_type, y= TAVG)) +
+  ggtitle("Chicago Precipitation and Crime Types") +
+  xlab("Primary Crime Type") + 
+  ylab("Amount of Precipitation") +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_boxplot()
+```
+
+We also looked at the relationship between type of crime and whether it resulted in an arrest.
+```{r}
+combined_data %>% mutate(fac_type=`Primary Type` %>% fct_infreq()) %>%
+  mutate(fac_type=fct_lump(fac_type, n=10)) %>%
+  ggplot(aes(fac_type, ..count..)) +
+  ggtitle("Chicago Crime Types vs Arrests") +
+  xlab("Primary Crime Type") + 
+  ylab("Number of Crimes") +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_bar(aes(fill=Arrest))
+```
+
+And calculated the ratio of arrests to each specific crime.
+```{r}
+combined_data %>% 
+  count(`Primary Type`, Arrest, .drop=FALSE) %>%
+  complete(`Primary Type`, Arrest) %>%
+  group_by(`Primary Type`) %>%
+  mutate(percent_arrested = n[Arrest == TRUE]/sum(n)) %>%
+  filter(Arrest == FALSE) %>%
+  select(-c(Arrest, n)) %>%
+  arrange(desc(percent_arrested))
+```
+
+
+
+#### Statistical Testing
+We then did some statistical testing to see whether the variables we will use in our model are statistically significant to an arrest occurring using an alpha of 0.05.
+```{r}
+wilcox.test(PRCP~ Arrest,
+            data = combined_data,
+            exact = FALSE)
+wilcox.test(SNOW~ Arrest,
+            data = combined_data,
+            exact = FALSE)
+wilcox.test(TAVG~ Arrest,
+            data = combined_data,
+            exact = FALSE)
+wilcox.test(TMAX~ Arrest,
+            data = combined_data,
+            exact = FALSE)
+wilcox.test(TMIN~ Arrest,
+            data = combined_data,
+            exact = FALSE)
+
+chisq.test(with(combined_data,table(Arrest, `Primary Type`)))
+```
+
+#### Modeling and Prediction
+Then we created a logistic regression model to predict arrests given just the primary type of crime.
+```{r}
+# Split data into training and testing datasets
+set.seed(123)
+training.samples <- sample(seq_len(nrow(combined_data)), size = floor(0.8 * nrow(combined_data)))
+train.data  <- combined_data[training.samples, ]
+test.data <- combined_data[-training.samples, ]
+rm(training.samples)
+
+# Fitting logistic regression model to predict arrests with just primary type
+model <- glm(Arrest ~ `Primary Type`, data = train.data, family = binomial)
+
+# Make predictions
+probabilities <- model %>% predict(test.data, type = "response")
+predicted.classes <- ifelse(probabilities > 0.5, "TRUE", "FALSE")
+# Model accuracy
+cat('Logistic Regression Model Accuracy w/ just primary type: ', round(mean(predicted.classes == test.data$Arrest, na.rm=TRUE),4) * 100, '%')
+```
+
+Then we created an additional logistic regression model to predict arrests given the amount of precipitation and type of crime.
+```{r}
+# Fitting logistic regression model to predict arrests with primary type of crime and precipitation amount
+model <- glm(Arrest ~ `Primary Type` + PRCP, data = train.data, family = binomial)
+
+# Make predictions
+probabilities <- model %>% predict(test.data, type = "response")
+predicted.classes <- ifelse(probabilities > 0.5, "TRUE", "FALSE")
+# Model accuracy
+cat('Logistic Regression Model Accuracy w/ added precipitation amount: ', round(mean(predicted.classes == test.data$Arrest, na.rm=TRUE),4) * 100, '%')
+```
+
+
+We then created a third logistic regression model to predict arrests given the type of crime and the average, highest, and lowest temperatures for the day.
+```{r}
+# Fitting logistic regression model to predict arrests with primary type and average, max, and min temperature
+model <- glm(Arrest ~ `Primary Type` + TAVG + TMAX + TMIN, data = train.data, family = binomial)
+
+# Make predictions
+probabilities <- model %>% predict(test.data, type = "response")
+predicted.classes <- ifelse(probabilities > 0.5, "TRUE", "FALSE")
+# Model accuracy
+cat('Logistic Regression Model Accuracy w/ added temperature info: ', round(mean(predicted.classes == test.data$Arrest, na.rm=TRUE),4) * 100, '%')
+```
+
+Summary output of the best performing model.
+```{r}
+# Summarize the best model
+summary(model)
+```
+
+#### Results
+The type of crime was the only statistically significant feature when trying to predict the likelihood of an arrest. The precipitation, snow, and temperature information was also statistically significant, but the significance was not enough to contribute to the predictions of a model. Because of this, we had to reject our alternative hypothesis that weather information can be used to predict the likelihood of an arrest for a crime. We suspect this is because the conditions of the day's weather should not and did not determine whether someone was arrested for a crime.
 
 
 ### Hypothesis 2 Testing
@@ -462,7 +633,7 @@ Hypothesis: The likelihood of an arrest can be calculated from the type of crime
 
 
 #### Visualization
-We wanted to visualize some of the relationships between our variables of interest. Here we have the locations of the crimes mapped with wether or not they resulted in an arrest.
+We wanted to visualize some of the relationships between our variables of interest. Here we have the locations of the crimes mapped with whether or not they resulted in an arrest.
 ```{r}
 ggplot(combined_data, aes(x=Longitude, y=Latitude, col=Arrest)) +
   ggtitle("Location of Crime") +
@@ -513,7 +684,7 @@ combined_data %>% mutate(fac_type=`Primary Type` %>% fct_infreq()) %>%
   coord_cartesian(ylim =  c(0, 1))
 ```
 
-We also looked at the relationship between type of crime and wether it resulted in an arrest.
+We also looked at the relationship between type of crime and whether it resulted in an arrest.
 ```{r}
 combined_data %>% mutate(fac_type=`Primary Type` %>% fct_infreq()) %>%
   mutate(fac_type=fct_lump(fac_type, n=10)) %>%
@@ -578,7 +749,7 @@ model <- glm( Arrest ~ Latitude + Longitude , data = train.data, family = binomi
 probabilities <- model %>% predict(test.data, type = "response")
 predicted.classes <- ifelse(probabilities > 0.5, "TRUE", "FALSE")
 # Model accuracy
-cat('Logistic Regression Model Accuracy w/ just crime location: ', round(mean(predicted.classes == test.data$Arrest),4), '%')
+cat('Logistic Regression Model Accuracy w/ just crime location: ', round(mean(predicted.classes == test.data$Arrest),4) * 100, '%')
 ```
 
 Then we created an additional logistic regression model to predict arrests given the location and type of crime.
@@ -590,7 +761,7 @@ model <- glm( Arrest ~ `Primary Type` + Latitude + Longitude, data = train.data,
 probabilities <- model %>% predict(test.data, type = "response")
 predicted.classes <- ifelse(probabilities > 0.5, "TRUE", "FALSE")
 # Model accuracy
-cat('Logistic Regression Model Accuracy w/o added distances: ', round(mean(predicted.classes == test.data$Arrest),4), '%')
+cat('Logistic Regression Model Accuracy w/o added distances: ', round(mean(predicted.classes == test.data$Arrest),4) * 100, '%')
 ```
 
 
@@ -603,7 +774,7 @@ model <- glm( Arrest ~ `Primary Type` + park_dist + library_dist + art_dist, dat
 probabilities <- model %>% predict(test.data, type = "response")
 predicted.classes <- ifelse(probabilities > 0.5, "TRUE", "FALSE")
 # Model accuracy
-cat('Logistic Regression Model Accuracy w/ added distances: ', round(mean(predicted.classes == test.data$Arrest),4), '%')
+cat('Logistic Regression Model Accuracy w/ added distances: ', round(mean(predicted.classes == test.data$Arrest),4) * 100, '%')
 ```
 
 Summary output of the best performing model.
