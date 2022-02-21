@@ -584,9 +584,9 @@ Then we looked for any relationship between the type of crime and the average te
 combined_data %>% mutate(fac_type=`Primary Type` %>% fct_infreq()) %>%
   mutate(fac_type=fct_lump(fac_type, n=10)) %>%
   ggplot(aes(x=fac_type, y= TAVG)) +
-  ggtitle("Chicago Precipitation and Crime Types") +
+  ggtitle("Chicago Temperature and Crime Types") +
   xlab("Primary Crime Type") + 
-  ylab("Amount of Precipitation") +
+  ylab("Average Temperature") +
   theme(axis.text.x=element_text(angle=45, hjust=1)) +
   geom_boxplot()
 ```
