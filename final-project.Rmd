@@ -11,6 +11,9 @@ In this project, we will be utilizing the `tidyverse` and `lubridate` packages f
 ```{r message=FALSE}
 library(tidyverse)
 library(lubridate)
+library(randomForest)
+library(caret)
+require(caTools)
 ```
 
 ## Hypotheses
@@ -449,7 +452,7 @@ There are a total of `r length(unique(cleaned_art_data$``PARK NUMBER``)` unique 
 scale <- function(x) sprintf("%.1f", x)
 
 ggplot(cleaned_art_data, aes(x=Longitude, y=Latitude)) +
-  ggtitle("Location of Libraries") +
+  ggtitle("Location of Artwork") +
   geom_point()
 ```
 
@@ -787,6 +790,303 @@ summary(model)
 The latitude, longitude, and type of crimes were the most statistically significant features when trying to predict the likelihood of an arrest. The distances to the nearest park and public art were also statistically significant when predicting an arrest, but the significance was slightly less. The least significant feature looked at was the distance to the nearest park, however this feature was still statistically significant. We suspect this is less significant because the libraries around Chicago are fairly evenly spread across the city. Adding the distances to the nearest park, public art, and library to the existing models using the primary type of crime and the crime location increased the models performance slightly. 
 
 
+## Hypothesis 3 Testing
+Days with inclement weather will have different amounts of the most common crime (Battery and Theft) than days without inclement weather
+
+```{r}
+crime_mann_whitney_test <- function(data, weather_condition) {
+  weather_count <- data[weather_condition,] %>%
+    group_by(date(DateTime), `Primary Type`) %>%
+    count(`Primary Type`)
+  
+  non_weather_count <- data[!weather_condition,] %>%
+    group_by(date(DateTime), `Primary Type`) %>%
+    count(`Primary Type`)
+  
+  cat("Total number of", nrow(weather_count), "weather entries.\n")
+  cat("Total number of", nrow(non_weather_count), "non-weather entries.\n")
+  
+  df = tibble(`Test` = c("Mann Whitney U P-Value"))
+  
+  for (type in unique(data$`Primary Type`)) {
+    weather_occurrences <- weather_count[weather_count$`Primary Type` == type,]
+    non_weather_occurrences <- non_weather_count[non_weather_count$`Primary Type` == type,]
+    
+    if (nrow(weather_occurrences) > 5 && nrow(non_weather_occurrences) > 5) {
+      stat_result <- wilcox.test(weather_occurrences$n, non_weather_occurrences$n, exact=FALSE)
+      df <- df %>% add_column(!!type := stat_result["p.value"][[1]])
+    } else {
+      df <- df %>% add_column(!!type := -1)
+    }
+  }
+  
+  return(df)
+}
+```
+
+### Testing days with rain
+```{r}
+rain_p_values <- crime_mann_whitney_test(combined_data, (combined_data$PRCP > 0.0))
+print(rain_p_values)
+```
+
+These results show that some types of crimes occur statistically different amounts on days with no rain, versus rain being present. With a p-value of 0.05, we can see that the most common crimes in Chicago, `battery` and `theft` occur in different amounts on days with rain versus days without rain. This allows us to reject the null hypothesis for both battery and theft, and accept the alternate hypothesis.
+
+### Testing days with snow
+```{r}
+snow_p_values <- crime_mann_whitney_test(combined_data, (combined_data$SNOW > 0.0))
+print(snow_p_values)
+```
+
+These results show that most types of crimes occur statistically different amounts on days with no snow, versus snow being present. With a p-value of 0.05, we can see that the most common crimes in Chicago, `battery` and `theft` occur significantly different amounts when there is snow, versus there not being snow. This allows us to reject the null hypothesis for both battery and theft, and accept the alternate hypothesis.
+
+### Testing days with thunder
+```{r}
+thunder_p_values <- crime_mann_whitney_test(combined_data, (combined_data$Thunder == TRUE))
+print(thunder_p_values)
+```
+
+These results show that some types of crimes occur statistically different amounts on days with no thunder, versus thunder being present. With this test, we are assuming Thunder implies more severe rain than above. With a p-value of 0.05, we can see that the most common crimes in Chicago, `battery` and `theft` don't necessarily occur differently. `battery` occurs in a different quantity when thunder is present, whereas `theft` does not. This allows us to reject the null hypothesis for battery, but forces us to accept it for theft, and accept the alternate hypothesis.
+
+### Testing a Linear Regression model
+
+With our alternate hypothesis being accepted in most cases, we are now interested in moving to modelling. While the big difference is between there *being weather* and *not being weather*, we are curious about whether or not we can predict crime rates with the type of weather, or the amount of precipitation/snow.
+
+```{r echo=FALSE}
+grouped_data <- combined_data %>%
+  group_by(date(DateTime), `Primary Type`) %>%
+  count(`Primary Type`, 
+        ACMH=ACMH,
+        ACSH=ACSH,
+        AWND=AWND,
+        FMTM=FMTM,
+        PGTM=PGTM, 
+        PRCP=PRCP,
+        PSUN=PSUN,
+        SNOW=SNOW,
+        SNWD=SNWD,
+        TAVG=TAVG,
+        TMAX=TMAX,
+        TMIN=TMIN,
+        TSUN=TSUN,
+        WDF1=WDF1,
+        WDF2=WDF2,
+        WDF5=WDF5,
+        WSFG=WSFG,
+        WSFM=WSFM,
+        Fog=Fog,
+        Heavy_Fog=Heavy_Fog,
+        Thunder=Thunder,
+        Ice_Rain=Ice_Rain,
+        Hail=Hail,
+        Glaze=Glaze,
+        Dust=Dust,
+        Smoke=Smoke,
+        Blowing_Snow=Blowing_Snow,
+        Tornado=Tornado,
+        High_Winds=High_Winds,
+        Mist=Mist,
+        Drizzle=Drizzle,
+        Freezing_Drizzle=Freezing_Drizzle,
+        Rain=Rain,
+        Freezing_Rain=Freezing_Rain,
+        Snow_Precip=Snow_Precip,
+        Unknown_Precip=Unknown_Precip,
+        Ground_Fog=Ground_Fog,
+        Ice_Fog=Ice_Fog,
+        Thunder_2=Thunder_2,
+        Rain_Snow_Shower=Rain_Snow_Shower)
+  
+battery_data <- grouped_data[grouped_data$`Primary Type` == "BATTERY",]
+battery_data <- mutate_at(battery_data, vars(-group_cols()), ~replace(., is.na(.), 0))
+
+theft_data <- grouped_data[grouped_data$`Primary Type` == "THEFT",]
+theft_data <- mutate_at(theft_data, vars(-group_cols()), ~replace(., is.na(.), 0))
+```
+
+### Testing Linear Regression Models
+In the first section, we want to see if we can predict the amount of crimes per day with a linear regression between the snowfall or the precipitation versus the battery and theft crimes.
+
+```{r}
+snow_battery_model = lm(n ~ SNOW, data = battery_data)
+summary(snow_battery_model)
+plot(battery_data$SNOW, battery_data$n, main="Snowfall vs. Battery Crimes per Day", xlab="Snowfall (in)", ylab="Quantity of Crimes per Day")
+abline(snow_battery_model)
+```
+
+```{r}
+rain_battery_model = lm(n ~ PRCP, data = battery_data)
+summary(rain_battery_model)
+plot(battery_data$PRCP, battery_data$n, main="Rainfall vs. Battery Crimes per Day", xlab="Rainfall (in)", ylab="Quantity of Crimes per Day")
+abline(rain_battery_model)
+```
+
+```{r}
+snow_theft_model = lm(n ~ SNOW, data = theft_data)
+summary(snow_theft_model)
+plot(theft_data$SNOW, theft_data$n, main="Snowfall vs. Theft Crimes per Day", xlab="Snowfall (in)", ylab="Quantity of Crimes per Day")
+abline(snow_theft_model)
+```
+
+```{r}
+rain_theft_model = lm(n ~ PRCP, data = theft_data)
+summary(rain_theft_model)
+plot(theft_data$PRCP, theft_data$n, main="Rainfall vs. Theft Crimes per Day", xlab="Rainfall (in)", ylab="Quantity of Crimes per Day")
+abline(rain_theft_model)
+```
+These models help illustrate that we cannot definitively predict the amount of crimes with the amount of rainfall or snowfall; the means between the two groups are different, but we cannot predict on the amount of crimes.
+
+### Testing a Random Forests model
+
+Next, we wanted to try to utilize more of the discrete features within the weather data to see if we can predict other features, using a random forest predictor.
+
+#### Predicting the crimes per day based on weather
+
+First, we wanted to try predicting the crimes per day for battery and theft based on the weather data.
+
+```{r}
+partition_idx <- createDataPartition(battery_data$n, p = 0.75, list=FALSE)
+training <- battery_data[partition_idx,]
+test <- battery_data[-partition_idx,]
+
+rf <- randomForest(
+  n ~ . - `date(DateTime)` - `Primary Type`,
+  data=training
+)
+
+print(rf)
+
+plot(rf, main="Battery Crimes Per Day RF Prediction Error")
+```
+
+```{r}
+partition_idx <- createDataPartition(theft_data$n, p = 0.75, list=FALSE)
+training <- theft_data[partition_idx,]
+test <- theft_data[-partition_idx,]
+
+rf <- randomForest(
+  n ~ . - `date(DateTime)` - `Primary Type`,
+  data=training
+)
+
+print(rf)
+
+plot(rf, main="Theft Crimes Per Day RF Prediction Error")
+```
+
+These models show that while the averages of both groups are different, weather is a non-predictor of the continuous number of crimes occuring per day.
+
+#### Predicting the average temperature per day based on weather and crimes
+
+Next, we wanted to try to see whether or not the number of crimes could be a predictor for the average daily temperature
+
+```{r}
+partition_idx <- createDataPartition(battery_data$TAVG, p = 0.75, list=FALSE)
+training <- battery_data[partition_idx,]
+test <- battery_data[-partition_idx,]
+
+rf1 <- randomForest(
+  TAVG ~ . - `date(DateTime)` - `Primary Type` - n,
+  data=training
+)
+
+print(rf1)
+
+plot(rf1, main="Average Temperature Per Day without Battery Data RF Prediction Error")
+
+rf2 <- randomForest(
+  TAVG ~ . - `date(DateTime)` - `Primary Type`,
+  data=training
+)
+
+print(rf2)
+
+plot(rf2, main="Average Temperature Per Day with Battery Data RF Prediction Error")
+
+rf3 <- randomForest(
+  TAVG ~ n,
+  data=training
+)
+
+print(rf3)
+
+plot(rf3, main="Average Temperature Per Day with only Battery Data RF Prediction Error")
+```
+
+```{r}
+partition_idx <- createDataPartition(theft_data$TAVG, p = 0.75, list=FALSE)
+training <- theft_data[partition_idx,]
+test <- theft_data[-partition_idx,]
+
+rf1 <- randomForest(
+  TAVG ~ . - `date(DateTime)` - `Primary Type` - n,
+  data=training
+)
+
+print(rf1)
+
+plot(rf1, main="Average Temperature Per Day without Theft Data RF Prediction Error")
+
+rf2 <- randomForest(
+  TAVG ~ . - `date(DateTime)` - `Primary Type`,
+  data=training
+)
+
+print(rf2)
+
+plot(rf2, main="Average Temperature Per Day with Theft Data RF Prediction Error")
+
+rf3 <- randomForest(
+  TAVG ~ n,
+  data=training
+)
+
+print(rf3)
+
+plot(rf3, main="Average Temperature Per Day with only Theft Data RF Prediction Error")
+```
+
+These models show that while the number of crimes can have a slight improvement to the prediction of the daily average temperature, it is nearly insignificant in most cases.
+
+#### Predicting the presence of fog on a day based on weather and crimes
+
+Finally, we wanted to predict the presence of Fog (general weather feature likely in most inclement weather) based on the crimes per day.
+
+```{r}
+battery_data$Fog <- as.factor(battery_data$Fog)
+
+partition_idx <- createDataPartition(battery_data$Fog, p = 0.75, list=FALSE)
+training <- battery_data[partition_idx,]
+test <- battery_data[-partition_idx,]
+
+rf <- randomForest(
+  Fog ~ n,
+  data=training
+)
+
+print(rf)
+
+plot(rf, main="Presence of Fog with Battery Data RF Prediction Error")
+```
+
+```{r}
+theft_data$Fog <- as.factor(theft_data$Fog)
+
+partition_idx <- createDataPartition(theft_data$Fog, p = 0.75, list=FALSE)
+training <- theft_data[partition_idx,]
+test <- theft_data[-partition_idx,]
+
+rf <- randomForest(
+  Fog ~ n,
+  data=training
+)
+
+print(rf)
+
+plot(rf, main="Presence of Fog with Theft Data RF Prediction Error")
+```
+This data shows that we cannot definitively predict whether or not there is fog based on the number of crimes per day. While we are able to get some values, this is likely due to random chance.
 
 
-
+### Recap
+We were able to prove and accept our alternative hypothesis that the weather impacts the number of crimes per day for most crimes in Chicago. When looking to predict the number of crimes per day, and the weather of a given day, our models performed very poorly and failed to predict in most cases. This could likely be improved with other data, but when directly analyzing the correlation between weather and crimes, there is little relationship when looking at continuous variables.
