@@ -366,7 +366,7 @@ There are a total of `r length(unique(cleaned_crime_data$IUCR))` unique crimes
 
 ```{r}
 ggplot(cleaned_park_data, aes(x=Longitude, y=Latitude)) +
-  ggtitle("Location of Parks") +
+  ggtitle("Location of Crimes") +
   geom_point()
 ```
 
@@ -385,7 +385,78 @@ cleaned_crime_data %>%
 
 ### NOAA Chicago Weather Dataset
 
-There are a total of `r length(colnames(cleaned_park_data))` unique features in the dataset.
+There are a total of `r length(colnames(cleaned_weather_data))` unique features in the dataset.
+
+```{r message=FALSE}
+ggplot(cleaned_weather_data, aes(group=day(Date), y=PRCP)) +
+  ggtitle("Amount of Daily Rainfall") +
+  xlab("Day of Month") + 
+  ylab("Amount of Rainfall (in)") +
+  geom_boxplot()
+```
+
+```{r message=FALSE}
+ggplot(cleaned_weather_data, aes(group=month(Date), y=PRCP)) +
+  ggtitle("Amount of Monthly Rainfall") +
+  xlab("Month") + 
+  ylab("Amount of Rainfall (in)") +
+  geom_boxplot()
+```
+
+```{r message=FALSE}
+ggplot(cleaned_weather_data, aes(group=day(Date), y=SNOW)) +
+  ggtitle("Amount of Daily Snowfall") +
+  xlab("Day of Month") + 
+  ylab("Amount of Snowfall (in)") +
+  geom_boxplot()
+```
+
+```{r message=FALSE}
+ggplot(cleaned_weather_data, aes(group=month(Date), y=SNOW)) +
+  ggtitle("Amount of Monthly Snowfall") +
+  xlab("Month") + 
+  ylab("Amount of Snowfall (in)") +
+  geom_boxplot()
+```
+
+```{r message=FALSE}
+ggplot(cleaned_weather_data, aes(group=day(Date), y=TAVG)) +
+  ggtitle("Daily Average Temperature") +
+  xlab("Day of Month") + 
+  ylab("Average Temperature (degrees)") +
+  geom_boxplot()
+```
+
+```{r message=FALSE}
+ggplot(cleaned_weather_data, aes(group=month(Date), y=TAVG)) +
+  ggtitle("Monthly Average Temperature") +
+  xlab("Month") + 
+  ylab("Average Temperature (degrees)") +
+  geom_boxplot()
+```
+
+
+```{r}
+cleaned_weather_data %>%
+  ggplot(aes(x=Rain)) +
+  ggtitle("Days Recorded with Rain Feature") +
+  xlab("Rain Present") + 
+  ylab("Days with Rain") +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_bar()
+```
+
+```{r}
+cleaned_weather_data[cleaned_weather_data$Date > dmy("12/31/2019"),] %>%
+  ggplot(aes(x=Rain)) +
+  ggtitle("Days Recorded with Rain Feature") +
+  xlab("Rain Present") + 
+  ylab("Days with Rain") +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_bar()
+```
+
+As shown above, some features do not exist within our chosen time frame.
 
 ### Chicago Park Dataset
 
