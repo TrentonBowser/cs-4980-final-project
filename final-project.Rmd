@@ -31,7 +31,7 @@ The Chicago Crime dataset contains records of most crimes that the Chicago Polic
 The dataset contains nearly 7,500,000 entries, with 22 total features. Features include information about the date and location of the crime, as well as information about the type of crime and description of events. During this experiment, we will primarily be using the `Primary Type` feature (listing the type of crime) as a target variable, in order to determine if there are external factors to the types of crimes being predicted. As a note, we have only selected a more recent subset of the data, to focus on the current state of crime in the city, and to make the data more workable.
 
 This dataset can be sourced from the [City of Chicago website](https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-Present/ijzp-q8t2).
-```{r message=FALSE}
+```{r eval=FALSE}
 crime_data <- read_csv(
   "data/chicago-crime-dataset.csv",
   col_names = TRUE,
@@ -49,7 +49,7 @@ This dataset contains information about the location of the weather station taki
 
 This dataset can be sourced from the [NOAA website](https://www.weather.gov/wrh/Climate?wfo=lot).
 
-```{r message=FALSE}
+```{r eval=FALSE}
 weather_data <- read_csv(
   "data/noaa-chicago-weather.csv",
   col_names = TRUE,
@@ -69,7 +69,7 @@ This dataset contains locations and boundaries of the public parks within the Ch
 
 This dataset can be sourced from the [City of Chicago website](https://data.cityofchicago.org/Parks-Recreation/Parks-Chicago-Park-District-Facilities-current-/5yyk-qt9y).
 
-```{r message=FALSE}
+```{r eval=FALSE}
 park_data <- read_csv(
   "data/chicago-parks-data.csv",
   col_names = TRUE,
@@ -87,7 +87,7 @@ This dataset contains location data (latitude, longitude, and address) for libra
 
 This dataset can be sourced from the [City of Chicago website](https://data.cityofchicago.org/Education/Libraries-Locations-Hours-and-Contact-Information-/wa2i-tm5d).
 
-```{r message=FALSE}
+```{r eval=FALSE}
 library_data <- read_csv(
   "data/chicago-libraries-data.csv",
   col_names = TRUE,
@@ -105,7 +105,7 @@ This dataset contains information about the parks containing the artwork, the ty
 
 This dataset can be sourced from the [City of Chicago website](https://data.cityofchicago.org/Parks-Recreation/Parks-Public-Art/sj6t-9cju/data).
 
-```{r message=FALSE}
+```{r eval=FALSE}
 art_data <- read_csv(
   "data/chicago-public-art-data.csv",
   col_names = TRUE,
@@ -123,7 +123,7 @@ art_data <- read_csv(
 In this section, we pre-process the data before testing and modelling on it. This includes removing un-needed columns in the data, as well as combining the data into a single, usable source.
 
 ### Data Cleaning
-```{r}
+```{r eval=FALSE}
 cleaned_crime_data <- select(crime_data, -c(ID,'Case Number' , Block, 'X Coordinate', 'Y Coordinate', Year, 'Updated On', Location))
 cleaned_crime_data$DateTime <- mdy_hms(cleaned_crime_data$Date)
 cleaned_crime_data$Date <- date(cleaned_crime_data$DateTime)
@@ -141,7 +141,7 @@ cleaned_crime_data$`Location Description` <- as.factor(cleaned_crime_data$`Locat
 cleaned_crime_data$`FBI Code` <- as.factor(cleaned_crime_data$`FBI Code`)
 ```
 
-```{r}
+```{r eval=FALSE}
 cleaned_weather_data <- select(weather_data, -c(STATION, NAME, LATITUDE, LONGITUDE, ELEVATION))
 cleaned_weather_data$DATE <- mdy(cleaned_weather_data$DATE)
 cleaned_weather_data <- cleaned_weather_data %>%
@@ -218,7 +218,7 @@ cleaned_weather_data$Rain_Snow_Shower <- as.logical(cleaned_weather_data$Rain_Sn
 ```
 
 
-```{r}
+```{r eval=FALSE}
 cleaned_park_data <- select(park_data, -c(OBJECTID, the_geom, GISOBJID))
 cleaned_park_data <- rename(cleaned_park_data, Longitude = X_COORD, Latitude = Y_COORD)
 
@@ -231,7 +231,7 @@ cleaned_park_data$FACILITY_N <- as.factor(cleaned_park_data$FACILITY_N)
 cleaned_park_data$FACILITY_T <- as.factor(cleaned_park_data$FACILITY_T)
 ```
 
-```{r}
+```{r eval=FALSE}
 cleaned_library_data <- select(library_data, -c("HOURS OF OPERATION", ADDRESS, CITY, STATE, ZIP, PHONE, WEBSITE))
 cleaned_library_data$LOCATION <- str_remove_all(cleaned_library_data$LOCATION, "[ \\(\\)]")
 cleaned_library_data <- cleaned_library_data %>% separate(LOCATION, c("Latitude", "Longitude"), ",")
@@ -240,7 +240,7 @@ cleaned_library_data$Latitude <- as.numeric(cleaned_library_data$Latitude)
 cleaned_library_data$Longitude <- as.numeric(cleaned_library_data$Longitude)
 ```
 
-```{r}
+```{r eval=FALSE}
 cleaned_art_data <- select(art_data, -c("X COORDINATE", "Y COORDINATE", LOCATION, OWNER))
 cleaned_art_data <- rename(cleaned_art_data, Longitude = LONGITUDE, Latitude = LATITUDE)
 
@@ -254,7 +254,7 @@ cleaned_art_data$ARTIST <- as.factor(cleaned_art_data$ARTIST)
 
 ### Combining Data
 
-```{r}
+```{r eval=FALSE}
 combined_data <- cleaned_crime_data %>% left_join(cleaned_weather_data, by="Date")
 combined_data <- select(combined_data, -Date)
 
@@ -300,16 +300,12 @@ get_closest_park_function <- function(row){
 }
 
 
-#closest_parks <- apply(combined_data, MARGIN=1, FUN=get_closest_park_function)
-#combined_data <- combined_data %>% add_column(closest_park = closest_parks[1,], park_dist = closest_parks[2,])
-
-#test <- combined_data %>% slice(1:1000)
-#closest_parks <- apply(test, MARGIN=1, FUN=get_closest_park_function)
-#test <- test %>% add_column(closest_park = closest_parks[1,], park_dist = closest_parks[2,])
+closest_parks <- apply(combined_data, MARGIN=1, FUN=get_closest_park_function)
+combined_data <- combined_data %>% add_column(closest_park = closest_parks[1,], park_dist = closest_parks[2,])
 ```
 
 #### Adding Nearest Library To Crime
-```{r}
+```{r eval=FALSE}
 # Function that finds the closest library and its distance from each crime row
 get_closest_library_function <- function(row){
   library_distances <- apply(cleaned_library_data, MARGIN=1, FUN=calculate_distance, lat1=as.numeric(row["Latitude"]), long1=as.numeric(row["Longitude"]))
@@ -321,17 +317,12 @@ get_closest_library_function <- function(row){
   return(c(closest_library, closest_dist))
 }
 
-#closest_libraries <- apply(combined_data, MARGIN=1, FUN=get_closest_library_function)
-#combined_data <- combined_data %>% add_column(closest_library = closest_libraries[1,], library_dist = closest_libraries[2,])
-
-#test <- combined_data %>% slice(1:1000)
-#closest_libraries <- apply(test, MARGIN=1, FUN=get_closest_library_function)
-#test <- test %>% add_column(closest_library = closest_libraries[1,], library_dist = closest_libraries[2,])
-
+closest_libraries <- apply(combined_data, MARGIN=1, FUN=get_closest_library_function)
+combined_data <- combined_data %>% add_column(closest_library = closest_libraries[1,], library_dist = closest_libraries[2,])
 ```
 
 #### Adding Nearest Art To Crime
-```{r}
+```{r eval=FALSE}
 # Function that finds the closest art and its distance from each crime row
 get_closest_art_function <- function(row){
   art_distances <- apply(cleaned_art_data, MARGIN=1, FUN=calculate_distance, lat1=as.numeric(row["Latitude"]), long1=as.numeric(row["Longitude"]))
@@ -343,21 +334,25 @@ get_closest_art_function <- function(row){
   return(c(closest_art, closest_dist))
 }
 
-#closest_artwork <- apply(combined_data, MARGIN=1, FUN=get_closest_art_function)
-#combined_data <- combined_data %>% add_column(closest_art = closest_artwork[1,], art_dist = closest_artwork[2,])
-#rm(closest_artwork)
-
-
-#closest_artwork <- apply(test, MARGIN=1, FUN=get_closest_art_function)
-#test <- test %>% add_column(closest_art = closest_artwork[1,], art_dist = closest_artwork[2,])
-
+closest_artwork <- apply(combined_data, MARGIN=1, FUN=get_closest_art_function)
+combined_data <- combined_data %>% add_column(closest_art = closest_artwork[1,], art_dist = closest_artwork[2,])
+rm(closest_artwork)
 ```
 
 
-```{r}
+```{r eval=FALSE}
 combined_data$closest_park <- as.factor(combined_data$closest_park)
 combined_data$closest_library <- as.factor(combined_data$closest_library)
 combined_data$closest_art <- as.factor(combined_data$closest_art)
+
+combined_data$park_dist <- as.double(combined_data$park_dist)
+combined_data$library_dist <- as.double(combined_data$library_dist)
+combined_data$art_dist <- as.double(combined_data$art_dist)
+```
+
+#### Load in Workspace
+```{r echo=FALSE}
+load("all-data-combined.RData")
 ```
 
 
@@ -457,3 +452,170 @@ ggplot(cleaned_art_data, aes(x=Longitude, y=Latitude)) +
   ggtitle("Location of Libraries") +
   geom_point()
 ```
+
+
+
+
+
+### Hypothesis 2 Testing
+Hypothesis: The likelihood of an arrest can be calculated from the type of crime and the crime's location in relation of libraries, parks, and public art.
+
+
+#### Visualization
+We wanted to visualize some of the relationships between our variables of interest. Here we have the locations of the crimes mapped with wether or not they resulted in an arrest.
+```{r}
+ggplot(combined_data, aes(x=Longitude, y=Latitude, col=Arrest)) +
+  ggtitle("Location of Crime") +
+  geom_point()
+```
+
+Here we are looking for any relationship between arrests and the distance to art.
+```{r}
+ggplot(combined_data, aes(x=Arrest, y= art_dist)) + 
+  xlab("Arrest") + 
+  ylab("Distance to Art") +
+  geom_boxplot(outlier.shape = NA) +
+  coord_cartesian(ylim =  c(0, 3))
+```
+
+Here we are reviewed the relationship between arrests and the distance to the parks.
+```{r}
+ggplot(combined_data, aes(x=Arrest, y= park_dist)) + 
+  xlab("Arrest") + 
+  ylab("Distance to Park") +
+  geom_boxplot(outlier.shape = NA) +
+  coord_cartesian(ylim =  c(0, 0.75))
+```
+
+Then we looked for any difference between the type of crime and the distance to the public art. 
+```{r}
+combined_data %>% mutate(fac_type=`Primary Type` %>% fct_infreq()) %>%
+  mutate(fac_type=fct_lump(fac_type, n=10)) %>%
+  ggplot(aes(x=fac_type, y= art_dist)) +
+  ggtitle("Art Distances from Chicago Crime Types") +
+  xlab("Primary Crime Type") + 
+  ylab("Distance to Public Art") +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_boxplot(outlier.shape = NA) +
+  coord_cartesian(ylim =  c(0, 3.25))
+```
+
+Then we looked for any difference between the type of crime and the distance to the parks. 
+```{r}
+combined_data %>% mutate(fac_type=`Primary Type` %>% fct_infreq()) %>%
+  mutate(fac_type=fct_lump(fac_type, n=10)) %>%
+  ggplot(aes(x=fac_type, y= park_dist)) +
+  ggtitle("Art Distances from Chicago Crime Types") +
+  xlab("Primary Crime Type") + 
+  ylab("Distance to Closest Park") +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_boxplot(outlier.shape = NA) +
+  coord_cartesian(ylim =  c(0, 1))
+```
+
+We also looked at the relationship between type of crime and wether it resulted in an arrest.
+```{r}
+combined_data %>% mutate(fac_type=`Primary Type` %>% fct_infreq()) %>%
+  mutate(fac_type=fct_lump(fac_type, n=10)) %>%
+  ggplot(aes(fac_type, ..count..)) +
+  ggtitle("Chicago Crime Types vs Arrests") +
+  xlab("Primary Crime Type") + 
+  ylab("Number of Crimes") +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_bar(aes(fill=Arrest))
+```
+
+And calculated the ratio of arrests to each specific crime.
+```{r}
+combined_data %>% 
+  count(`Primary Type`, Arrest, .drop=FALSE) %>%
+  complete(`Primary Type`, Arrest) %>%
+  group_by(`Primary Type`) %>%
+  mutate(percent_arrested = n[Arrest == TRUE]/sum(n)) %>%
+  filter(Arrest == FALSE) %>%
+  select(-c(Arrest, n)) %>%
+  arrange(desc(percent_arrested))
+```
+
+
+
+#### Statistical Testing
+We then did some statistical testing to see whether the variables we will use in our model are statistically significant to an arrest occurring using an alpha of 0.05.
+```{r}
+wilcox.test(Latitude~ Arrest,
+            data = combined_data,
+            exact = FALSE)
+wilcox.test(Longitude~ Arrest,
+            data = combined_data,
+            exact = FALSE)
+wilcox.test(park_dist~ Arrest,
+            data = combined_data,
+            exact = FALSE)
+wilcox.test(library_dist~ Arrest,
+            data = combined_data,
+            exact = FALSE)
+wilcox.test(art_dist~ Arrest,
+            data = combined_data,
+            exact = FALSE)
+
+chisq.test(with(combined_data,table(Arrest, `Primary Type`)))
+```
+
+#### Modeling and Prediction
+Then we created a logistic regression model to predict arrests given the crime location.
+```{r}
+# Split data into training and testing datasets
+set.seed(123)
+training.samples <- sample(seq_len(nrow(combined_data)), size = floor(0.8 * nrow(combined_data)))
+train.data  <- combined_data[training.samples, ]
+test.data <- combined_data[-training.samples, ]
+rm(training.samples)
+
+# Fitting logistic regression model to predict arrests with just location
+model <- glm( Arrest ~ Latitude + Longitude , data = train.data, family = binomial)
+
+# Make predictions
+probabilities <- model %>% predict(test.data, type = "response")
+predicted.classes <- ifelse(probabilities > 0.5, "TRUE", "FALSE")
+# Model accuracy
+cat('Logistic Regression Model Accuracy w/ just crime location: ', round(mean(predicted.classes == test.data$Arrest),4), '%')
+```
+
+Then we created an additional logistic regression model to predict arrests given the location and type of crime.
+```{r}
+# Fitting logistic regression model to predict arrests with location and type of crime
+model <- glm( Arrest ~ `Primary Type` + Latitude + Longitude, data = train.data, family = binomial)
+
+# Make predictions
+probabilities <- model %>% predict(test.data, type = "response")
+predicted.classes <- ifelse(probabilities > 0.5, "TRUE", "FALSE")
+# Model accuracy
+cat('Logistic Regression Model Accuracy w/o added distances: ', round(mean(predicted.classes == test.data$Arrest),4), '%')
+```
+
+
+We then created a third logistic regression model to predict arrests given the type of crime and the distances to the nearest library, park, and public art.
+```{r}
+# Fitting logistic regression model to predict arrests without using distances to parks, art, and libraries
+model <- glm( Arrest ~ `Primary Type` + park_dist + library_dist + art_dist, data = train.data, family = binomial)
+
+# Make predictions
+probabilities <- model %>% predict(test.data, type = "response")
+predicted.classes <- ifelse(probabilities > 0.5, "TRUE", "FALSE")
+# Model accuracy
+cat('Logistic Regression Model Accuracy w/ added distances: ', round(mean(predicted.classes == test.data$Arrest),4), '%')
+```
+
+Summary output of the best performing model.
+```{r}
+# Summarize the best model
+summary(model)
+```
+
+#### Results
+The latitude, longitude, and type of crimes were the most statistically significant features when trying to predict the likelihood of an arrest. The distances to the nearest park and public art were also statistically significant when predicting an arrest, but the significance was slightly less. The least significant feature looked at was the distance to the nearest park, however this feature was still statistically significant. We suspect this is less significant because the libraries around Chicago are fairly evenly spread across the city. Adding the distances to the nearest park, public art, and library to the existing models using the primary type of crime and the crime location increased the models performance slightly. 
+
+
+
+
+
